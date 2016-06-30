@@ -1,6 +1,7 @@
 package com.example.jasmitsx.cardboardtest;
 
 import android.content.Context;
+import android.content.Intent;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
@@ -138,8 +139,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
+        int numberOfCubes= intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 1);
         //floatArray = new float[][]{f1, f2, f3, f4}; //Hardcoded array of floats to display cubes
-        int x=55;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
+        int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
         floatArray = floatArrayBuilder(x); //use with multiples of 11
         camera = new float[16];
         view = new float[16];

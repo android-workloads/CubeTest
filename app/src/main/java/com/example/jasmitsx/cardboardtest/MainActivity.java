@@ -20,9 +20,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void startVR(View view) {
         Intent intent = new Intent(this, TreasureHuntActivity.class);
-        //EditText editText = (EditText) findViewById(R.id.number_of_cubes);
-        //int message = Integer.parseInt(editText.getText().toString());
-        //intent.putExtra(EXTRA_MESSAGE, message);
+        EditText editText = (EditText) findViewById(R.id.number_of_cubes);
+        int message = Integer.parseInt(editText.getText().toString());
+        intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
     }
 }
