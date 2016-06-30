@@ -140,17 +140,17 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Intent intent = getIntent();
-        int numberOfCubes= intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 1);
+        int numberOfCubes= intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 1); //gets the number of cubes wanted by the user
         //floatArray = new float[][]{f1, f2, f3, f4}; //Hardcoded array of floats to display cubes
-        int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
-        floatArray = floatArrayBuilder(x); //use with multiples of 11
+        //int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
+        floatArray = floatArrayBuilder(numberOfCubes); //Creates an array of location floats for the specified number of cubes
         camera = new float[16];
         view = new float[16];
         modelViewProjection = new float[16];
         modelView = new float[16];
         modelFloor = new float[16];
         tempPosition = new float[4];
-        cubeArray = new CubeObject[x]; //Allows the creation of n number of cubes
+        cubeArray = new CubeObject[numberOfCubes]; //Allows the creation of n number of cubes
         for (int n = 0; n < cubeArray.length; n++) {
             cubeArray[n] = new CubeObject(floatArray[n], n);
             //cubeArray[n] = new CubeObject(getRandomLocation(), n); //calls a method to generate random cube location
@@ -492,10 +492,17 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     @Override
     public void onCardboardTrigger() {
         Log.i(TAG, "onCardboardTrigger");
-        for (int n = 0; n < cubeArray.length; n++) {
+        /*for (int n = 0; n < cubeArray.length; n++) {
             hideObject(cubeArray[n]);
+        }*/
+        int oldSize = cubeArray.length; //retains the current size of the cubeArray
+        floatArray = null;
+        floatArray = floatArrayBuilder(oldSize+11); //adds a new row to the floatArrayBuilder
+        cubeArray = null;
+        cubeArray = new CubeObject[oldSize+11]; //creates a new CubeArray 11 objects larger
+        for(int i=0; i<cubeArray.length; i++){
+            cubeArray[i]= new CubeObject(floatArray[i], i);
         }
-
         /*if (isLookingAtObject()) {
             hideObject(cube);
         }*/
