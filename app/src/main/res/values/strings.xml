@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">CardboardTest</string>
     <string name="start_workload">Start Workload</string>
-    <string name="number_input_info">Enter the number of cubes desired, MUST BE MULTIPLE OF 11</string>
-    <string name="time_input_info">Enter the number of minutes to run the test for</string>
+    <string name="number_input_info">Enter the number of rows</string>
+    <string name="time_input_info">Enter the number of minutes to run the test</string>
     <string name="title_activity_display_message">My Message</string>
     <string name="button_string">Start Workload</string>
     <string name="treasure_name">Treasure Hunt Activity</string>
