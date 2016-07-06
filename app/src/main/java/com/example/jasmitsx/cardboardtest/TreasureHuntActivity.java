@@ -7,6 +7,7 @@ import android.opengl.Matrix;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
+import android.os.SystemClock;
 
 import com.google.vr.sdk.base.Eye;
 import com.google.vr.sdk.base.GvrActivity;
@@ -62,6 +63,11 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private static final String SOUND_FILE = "cube_sound.wav";
 
     private static final float[] lightPosInEyeSpace = new float[4];
+
+    private long frameTime;
+    private long previousFrameTime = SystemClock.elapsedRealtime();
+    private long totalFrameTime=0;
+    private int frameCounter=0;
 
     private float[] camera;
     private float[] view;
@@ -122,6 +128,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         return shader;
     }
 
+    private void printdetails(float afps, double aut,double aaps, float jps, float acps){
+        //String s = String.format("%d %.4f %.4f", numberOfCubes, afps, aut, aaps, jps, acps);
+    }
+
     /**
      * Checks if we've had an error inside of OpenGL ES, and if so what that error is.
      *
@@ -146,8 +156,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         int numberOfCubes= intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 1); //gets the number of cubes wanted by the user
         //floatArray = new float[][]{f1, f2, f3, f4}; //Hardcoded array of floats to display cubes
         //int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
-        floatArray = new float[numberOfCubes][];
-        floatArray = floatArrayBuilder(numberOfCubes); //Creates an array of location floats for the specified number of cubes
+        //floatArray = new float[numberOfCubes][];
+        //floatArray = floatArrayBuilder(numberOfCubes); //Creates an array of location floats for the specified number of cubes
         floatArrayList = new ArrayList<>();
         floatArrayListBuilder(numberOfCubes);
         camera = new float[16];
@@ -156,13 +166,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         modelView = new float[16];
         modelFloor = new float[16];
         tempPosition = new float[4];
-        cubeArray = new CubeObject[numberOfCubes]; //Allows the creation of n number of cubes
         cubeArrayList = new ArrayList<>();
         for (int n = 0; n < floatArrayList.size(); n++) {
-            //cubeArray[n] = new CubeObject(floatArray[n], n);
             CubeObject c1 = new CubeObject(floatArrayList.get(n), n);
             cubeArrayList.add(c1);
-            //cubeArray[n] = new CubeObject(getRandomLocation(), n); //calls a method to generate random cube location
             Log.i(TAG, "OnCubeObjectCreation");
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
@@ -223,12 +230,30 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         gvrView.setRenderer(this);
         gvrView.setTransitionViewEnabled(true);
         gvrView.setOnCardboardBackButtonListener(
-                new Runnable() {
+                        new Runnable() {
                     @Override
                     public void run() {
                         onBackPressed();
                     }
                 });
+        setGvrView(gvrView);
+    }
+
+    //resets the gvrView but does not show the transition screen
+    public void updateGvrView(){
+        setContentView(R.layout.common_ui);
+
+        GvrView gvrView = (GvrView) findViewById(R.id.gvr_view);
+        gvrView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
+
+        gvrView.setRenderer(this);
+        gvrView.setOnCardboardBackButtonListener(
+                new Runnable() {
+            @Override
+            public void run() {
+                onBackPressed();
+            }
+        });
         setGvrView(gvrView);
     }
 
@@ -290,7 +315,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         //create and draw floor
         makeObject(floor);
         Log.i(TAG, "onFloorCreated");
-        //updateModelPosition(floor);
         Matrix.setIdentityM(floor.modelObject, 0);
         Matrix.translateM(floor.modelObject, 0, 0, -floorDepth, 0); // Floor appears below user.
         Log.i(TAG, "onFloorPositionUpdated");
@@ -403,6 +427,23 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onNewFrame(HeadTransform headTransform) {
+        frameTime = SystemClock.elapsedRealtime() - previousFrameTime;
+        previousFrameTime = SystemClock.elapsedRealtime();
+        if(frameTime<100) {
+            totalFrameTime = totalFrameTime + frameTime;
+        }
+        frameCounter++;
+        double averageFrameTime = (double)totalFrameTime/frameCounter;
+        double aFps = 0;
+        double fps = 0;
+        if(frameTime != 0) {
+            fps = 1/((double)frameTime/1000);
+        }
+        if(averageFrameTime != 0) {
+            aFps = 1 / (averageFrameTime / 1000);
+        }
+        //Log.i(TAG, Double.toString(averageFrameTime));
+        Log.i(TAG, Double.toString(fps));
         setCubeRotation();
 
         // Build the camera matrix and apply it to the ModelView.
@@ -421,16 +462,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     }
 
     protected void setCubeRotation() {
-        /*for (int n = 0; n < cubeArray.length; n++) {
-            Matrix.rotateM(cubeArray[n].getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
-        }*/
         //set the rotation for each cube in the ArrayList
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
         }
-        /*for(int n=0; n<cubeArray.length; n++){
-            Matrix.rotateM(cubeArray[n].getCubeModel(), 0, modelView, 0, 360.0f, 0.0f, 0.0f, 0.0f);
-        }*/
     }
 
     /**
@@ -458,11 +493,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         /**
          * Iterates through the array of cube objects and draws each of them
          */
-        /*for (int n = 0; n < cubeArray.length; n++) {
-            Matrix.multiplyMM(modelView, 0, view, 0, cubeArray[n].modelObject, 0);
-            Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-            drawObject(cubeArray[n]);
-        }*/
 
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.multiplyMM(modelView, 0, view, 0, cubeArrayList.get(n).modelObject, 0);
@@ -540,24 +570,31 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         }*/
         //add a mo re useful onCardboardTrigger function than making the cubes hard to find
 
+        // Always give user feedback.
+        vibrator.vibrate(50);
 
-        int oldSize = floatArrayList.size();
+        int oldSize = cubeArrayList.size();
+        int newSize = oldSize+11;
+        frameCounter=0;
+        totalFrameTime=0;
         floatArrayList.clear();
-        //cubeArrayList.clear();
-        floatArrayListBuilder(oldSize+11);
+        cubeArrayList.clear();
+        floatArrayListBuilder(newSize);
         for(int i=0; i<floatArrayList.size(); i++){
             CubeObject c1 = new CubeObject(floatArrayList.get(i), i);
-            if(i<oldSize) {
-                cubeArrayList.remove(i);
-            }
             cubeArrayList.add(i, c1);
+            //updateModelPosition(c1);
         }
+        tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
+        floor = new FloorObject(tempModelPosition);
+        Log.i(TAG, "OnFloorObjectCreation");
+        headRotation = new float[4];
+        headView = new float[16];
+        updateGvrView();
         /*if (isLookingAtObject()) {
             hideObject(cube);
         }*/
 
-        // Always give user feedback.
-        vibrator.vibrate(50);
     }
 
     /**
