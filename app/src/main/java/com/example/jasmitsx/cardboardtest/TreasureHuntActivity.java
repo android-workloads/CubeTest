@@ -210,6 +210,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
             start = -20.0f;
             elevation += 3.0f;
         }
+        int change;
         return floats;
     }
 
