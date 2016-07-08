@@ -37,6 +37,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private ArrayList<CubeObject> cubeArrayList;
 
     private FloorObject floor;
+    private FloorObject ceiling;
 
     private static final String TAG = "TreasureHuntActivity";
 
@@ -71,9 +72,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     private float[] camera;
     private float[] view;
+    private float[] view2;
     private float[] headView;
     private float[] modelViewProjection;
+    private float[] getModelViewProjection2;
     private float[] modelView;
+    private float[] modelView2;
     private float[] modelFloor;
 
     private float[] tempPosition;
@@ -91,6 +95,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
     private float floorDepth = 20f;
+    private float ceilingHeight = 40f;
 
     private Vibrator vibrator;
 
@@ -175,6 +180,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
         Log.i(TAG, "OnFloorObjectCreation");
+        //tempModelPosition = new float[]{0.0f, ceilingHeight, 0.0f}; //sets the position of the ceiling
+        //ceiling = new FloorObject(tempModelPosition);
         headRotation = new float[4];
         headView = new float[16];
         initializeGvrView();
@@ -303,7 +310,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         }*/
 
         //create and draw the cubes
-        for(int n=0; n<cubeArrayList.size(); n++){
+        for (int n = 0; n < cubeArrayList.size(); n++) {
             makeObject(cubeArrayList.get(n));
             Log.i(TAG, "onCubeCreated");
             updateModelPosition(cubeArrayList.get(n));
@@ -320,6 +327,16 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Log.i(TAG, "onFloorPositionUpdated");
         drawObject(floor);
         Log.i(TAG, "onFloorDrawn");
+
+        //create and draw the ceiling
+       /* makeObject(ceiling);
+        Log.i(TAG, "onCeilingCreated");
+        Matrix.setIdentityM(ceiling.modelObject, 0);
+        Matrix.translateM(ceiling.modelObject, 0, 0, ceilingHeight, 0); //ceiling appears above the user
+        Log.i(TAG,"onCeilingPositionUpdated");
+        drawObject(ceiling);
+        Log.i(TAG, "onCeilingDrawn");*/
+
 
         checkGLError("onSurfaceCreated");
     }
@@ -370,7 +387,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         object.objectModelParam = GLES20.glGetUniformLocation(object.objectProgram, "u_Model");
         object.objectModelViewParam = GLES20.glGetUniformLocation(object.objectProgram, "u_MVMatrix");
         object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(object.objectProgram, "u_MVP");
-        object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
+        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
 
         object.objectPositionParam = GLES20.glGetAttribLocation(object.objectProgram, "a_Position");
         object.objectNormalParam = GLES20.glGetAttribLocation(object.objectProgram, "a_Normal");
@@ -465,7 +482,10 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         //set the rotation for each cube in the ArrayList
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
+            //Matrix.setRotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
         }
+
+
     }
 
     /**
@@ -495,9 +515,11 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
          */
 
         for(int n=0; n<cubeArrayList.size(); n++){
-            Matrix.multiplyMM(modelView, 0, view, 0, cubeArrayList.get(n).modelObject, 0);
+            CubeObject c1 = cubeArrayList.get(n);
+            Matrix.multiplyMM(modelView, 0, view, 0, c1.modelObject, 0);
             Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-            drawObject(cubeArrayList.get(n));
+            drawObject(c1);
+
         }
 
 
@@ -508,6 +530,13 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Matrix.multiplyMM(modelView, 0, view, 0, floor.modelObject, 0);
         Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
         drawObject(floor);
+
+        /**
+         * Draws the ceiling object
+         */
+        /*Matrix.multiplyMM(modelView, 0, view, 0, ceiling.modelObject, 0);
+        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
+        drawObject(ceiling);*/
     }
 
     @Override
@@ -522,7 +551,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void drawObject(WorldObject object) {
         GLES20.glUseProgram(object.objectProgram);
 
-        GLES20.glUniform3fv(object.objectLightPosParam, 1, lightPosInEyeSpace, 0);
+        //GLES20.glUniform3fv(object.objectLightPosParam, 1, lightPosInEyeSpace, 0);
 
         // Set the Model in the shader, used to calculate lighting
         GLES20.glUniformMatrix4fv(object.objectModelParam, 1, false, object.modelObject, 0);
@@ -583,7 +612,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         for(int i=0; i<floatArrayList.size(); i++){
             CubeObject c1 = new CubeObject(floatArrayList.get(i), i);
             cubeArrayList.add(i, c1);
-            //updateModelPosition(c1);
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
