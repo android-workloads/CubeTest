@@ -15,7 +15,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.example.jasmitsx.cardboardtest.MainActivity"
-    tools:showIn="@layout/activity_main">
+    >
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -33,16 +33,17 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/button_string"
+        android:text="@string/first_button_string"
         android:onClick="startVR"/>
     <TextView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:text="@string/time_input_info"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/button_string"
-        android:onClick="startVR" />
+        android:text="@string/second_button_string"
+        android:onClick="startPerformanceWorkload" />
 
     </LinearLayout>

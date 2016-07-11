@@ -36,4 +36,9 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         }
     }
+
+    public void startPerformanceWorkload(View view){
+        Intent intent = new Intent(this, PerformanceWorkload.class);
+        startActivity(intent);
+    }
 }
