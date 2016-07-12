@@ -76,7 +76,12 @@
                 <category android:name="com.google.intent.category.CARDBOARD" />
             </intent-filter>
         </activity>
-        <activity android:name=".ResultActivity"></activity>
+        <activity
+            android:name=".ResultActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/result_name">
+            android:parentActivityName="com.example.jasmitsx.cardboardtest.PerformanceWorkload"
+        </activity>
     </application>
 
 </manifest>

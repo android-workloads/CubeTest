@@ -8,4 +8,5 @@
     <string name="second_button_string">Start Performance Workload</string>
     <string name="treasure_name">Treasure Hunt Activity</string>
     <string name="performance_name">Performance Workload</string>
+    <string name="result_name">Result Activity</string>
 </resources>

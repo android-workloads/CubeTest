@@ -56,7 +56,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private static final float Z_FAR = 100.0f;
 
     private static final float CAMERA_Z = 0.01f;
-    private static final float TIME_DELTA = 0.3f;
+    private static final float TIME_DELTA = 0.6f;
 
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.0f;
@@ -118,6 +118,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     private Vibrator vibrator;
 
+    public final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
+
     //private static GvrAudioEngine gvrAudioEngine;
     //private volatile int soundId = GvrAudioEngine.INVALID_ID;
 
@@ -152,10 +154,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         return shader;
     }
 
-    private void printdetails(float afps, double aut,double aaps, float jps, float acps){
-        //String s = String.format("%d %.4f %.4f", numberOfCubes, afps, aut, aaps, jps, acps);
-    }
-
     /**
      * Checks if we've had an error inside of OpenGL ES, and if so what that error is.
      *
@@ -178,12 +176,14 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         super.onCreate(savedInstanceState);
         //Intent intent = getIntent();
         int numberOfCubes = 11;
+        stillRunning = true;
         //floatArray = new float[][]{f1, f2, f3, f4}; //Hardcoded array of floats to display cubes
         //int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
         //floatArray = new float[numberOfCubes][];
         //floatArray = floatArrayBuilder(numberOfCubes); //Creates an array of location floats for the specified number of cubes
         totalTime = SystemClock.elapsedRealtime();
         floatArrayList = new ArrayList<>();
+        aFpsArray = new ArrayList<>();
         floatArrayListBuilder(numberOfCubes);
         camera = new float[16];
         view = new float[16];
@@ -212,28 +212,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         //gvrAudioEngine = new GvrAudioEngine(this, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
     }
 
-    /*
-    Creates an array of position floats to create a grid with 'n'
-    number of cubes.
-     */
-    public float[][] floatArrayBuilder(int n) {
-        //private float[] f1={0.0f, 0.0f, -MAX_MODEL_DISTANCE/2.0f};
-        float[][] floats = new float[n][3];
-        float start = -20.0f;
-        float elevation = 0.0f;
-        int count = 0;
-        for(int p=0; p<(n/11); p++) {
-            for (int i = 0; i < 11; i++) {
-                floats[count] = new float[]{start, elevation, -20.0f};
-                start = start + (float) 40 / 11;
-                count++;
-            }
-            start = -20.0f;
-            elevation += 3.0f;
-        }
-        return floats;
-    }
-
+   /**
+    * Creates an array list of float objects for object position
+    */
     public void floatArrayListBuilder(int n){
         float start = -20f;
         float elevation = 0.0f;
@@ -289,6 +270,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     public void onPause() {
         //gvrAudioEngine.pause();
         super.onPause();
+        finish();
     }
 
     @Override
@@ -333,21 +315,15 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         //create and draw the cubes
         for (int n = 0; n < cubeArrayList.size(); n++) {
             makeObject(cubeArrayList.get(n));
-            Log.i(TAG, "onCubeCreated");
             updateModelPosition(cubeArrayList.get(n));
-            Log.i(TAG, "obCubePositionUpdated");
             drawObject(cubeArrayList.get(n));
-            Log.i(TAG, "onCubeDrawn");
         }
 
         //create and draw floor
         makeObject(floor);
-        Log.i(TAG, "onFloorCreated");
         Matrix.setIdentityM(floor.modelObject, 0);
         Matrix.translateM(floor.modelObject, 0, 0, -floorDepth, 0); // Floor appears below user.
-        Log.i(TAG, "onFloorPositionUpdated");
         drawObject(floor);
-        Log.i(TAG, "onFloorDrawn");
 
         //create and draw the ceiling
        /* makeObject(ceiling);
@@ -561,12 +537,16 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     public void onFinishFrame(Viewport viewport) {
     }
 
+    static boolean stillRunning;
+
     //adds a new row of cubes every 5 seconds
    public void scheduleAddCubes(){
         handler.postDelayed(new Runnable(){
         public void run() {
-            addNewCubeRow();
-            handler.postDelayed(this, 5000);
+            if(stillRunning) {
+                addNewCubeRow();
+                handler.postDelayed(this, 5000);
+            }
         }
     }, 5000);
     }
@@ -654,6 +634,10 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         int oldSize = cubeArrayList.size();
         int newSize = oldSize+11;
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
+        aFpsArray.add(aFps);
+        if(aFps<10){
+            showResults();
+        }
         aFps = 0;
         frameCounter = 0;
         totalFps = 0;
@@ -735,7 +719,15 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         return location;
     }
     public void showResults(){
-
+        Intent intent = new Intent(this, ResultActivity.class);
+        //intent.putExtra(EXTRA_MESSAGE, i);
+        float[] resArray = new float[aFpsArray.size()];
+        for(int i=0; i<resArray.length; i++){
+            resArray[i]=aFpsArray.get(i).floatValue();
+        }
+        stillRunning = false;
+        intent.putExtra(EXTRA_MESSAGE, resArray);
+        startActivity(intent);
     }
 
     /**
