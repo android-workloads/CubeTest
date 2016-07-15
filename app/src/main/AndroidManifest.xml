@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <!-- Make accelerometer and gyroscope hard requirements for good head tracking. -->
     <uses-feature
@@ -30,13 +31,14 @@
         android:name="android.hardware.vr.high_performance"
         android:required="false" />
 
-    <android:uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <android:uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:largeHeap="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity">
@@ -78,9 +80,14 @@
         </activity>
         <activity
             android:name=".ResultActivity"
-            android:screenOrientation="portrait"
-            android:label="@string/result_name">
+            android:label="@string/result_name"
+            android:screenOrientation="portrait">
             android:parentActivityName="com.example.jasmitsx.cardboardtest.PerformanceWorkload"
+        </activity>
+        <activity android:name=".BatteryResult"
+            android:label="@string/batt_result_name"
+            android:screenOrientation="portrait">
+            android:parentActivityName="com.example.jasmitsx.cardboardtest.TreasureHuntActivity"
         </activity>
     </application>
 

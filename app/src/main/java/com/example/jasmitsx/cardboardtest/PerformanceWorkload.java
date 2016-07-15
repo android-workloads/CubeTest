@@ -1,8 +1,8 @@
 package com.example.jasmitsx.cardboardtest;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.Sensor;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
@@ -10,20 +10,12 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.accessibility.AccessibilityEvent;
 
-import com.google.vr.ndk.base.GvrApi;
-import com.google.vr.ndk.base.proto.nano.GvrApiData;
 import com.google.vr.sdk.base.Eye;
 import com.google.vr.sdk.base.GvrActivity;
 import com.google.vr.sdk.base.GvrView;
-import com.google.vr.sdk.base.GvrViewerParams;
 import com.google.vr.sdk.base.HeadTransform;
 import com.google.vr.sdk.base.Viewport;
-import com.google.vr.sdk.base.sensors.MagnetSensor;
-import com.google.vr.sdk.base.sensors.SensorConnection;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,10 +23,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Timer;
-import java.lang.Object;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
@@ -42,7 +33,7 @@ import javax.microedition.khronos.egl.EGLConfig;
  * Created by jasmitsx on 7/8/2016.
  */
 public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRenderer {
-    protected float[] tempModelPosition;
+    private float[] tempModelPosition;
 
     private CubeObject[] cubeArray;
     private ArrayList<CubeObject> cubeArrayList;
@@ -61,7 +52,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.0f;
 
-    public Handler handler = new Handler();
+    private Handler handler = new Handler();
 
     private static final int COORDS_PER_VERTEX = 3;
 
@@ -87,6 +78,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private ArrayList<Double> aFpsArray;
     private double totalFps=0;
 
+    //variables for CPU usage
+    private float cpuUse=0;
+
     //time counter for elapsed time between new cube adds
     private long totalTime;
     private long elapsedTime;
@@ -104,24 +98,30 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     //example coordinate array
     private float[][] floatArray;
-    ArrayList<float[]> floatArrayList;
+    private ArrayList<float[]> floatArrayList;
 
-    //example coordinate sets
-    private float[] f1 = {0.0f, 0.0f, -MAX_MODEL_DISTANCE / 2.0f};
-    private float[] f2 = {0.0f, 0.0f, MAX_MODEL_DISTANCE / 2.0f};
-    private float[] f3 = {3.0f, 0.0f, 0.0f};
-    private float[] f4 = {-3.0f, 0.0f, 0.0f};
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
     private float floorDepth = 20f;
     private float ceilingHeight = 40f;
 
+    private int vertexShader;
+    private int gridShader;
+    private int passthroughShader;
+
+    private FloatBuffer cubeVertices;
+    private FloatBuffer cubeColors;
+    private FloatBuffer cubeNormals;
+    private int cubeProgram;
+
+    private FloatBuffer floorVertices;
+    private FloatBuffer floorColors;
+    private FloatBuffer floorNormals;
+    private int floorProgram;
+
     private Vibrator vibrator;
 
     public final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
-
-    //private static GvrAudioEngine gvrAudioEngine;
-    //private volatile int soundId = GvrAudioEngine.INVALID_ID;
 
     /**
      * Converts a raw text file, saved as a resource, into an OpenGL ES shader.
@@ -130,7 +130,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      * @param resId The resource ID of the raw text file about to be turned into a shader.
      * @return The shader object handler.
      */
-    protected int loadGLShader(int type, int resId) {
+    private int loadGLShader(int type, int resId) {
         String code = readRawTextFile(resId);
         int shader = GLES20.glCreateShader(type);
         GLES20.glShaderSource(shader, code);
@@ -159,7 +159,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      *
      * @param label Label to report in case of error.
      */
-    protected static void checkGLError(String label) {
+    private static void checkGLError(String label) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
             Log.e(TAG, label + ": glError " + error);
@@ -174,13 +174,13 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Intent intent = getIntent();
-        int numberOfCubes = 11;
+
+
         stillRunning = true;
-        //floatArray = new float[][]{f1, f2, f3, f4}; //Hardcoded array of floats to display cubes
-        //int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
-        //floatArray = new float[numberOfCubes][];
-        //floatArray = floatArrayBuilder(numberOfCubes); //Creates an array of location floats for the specified number of cubes
+        scheduleAddCubes();
+
+        initializeGvrView();
+        int numberOfCubes = 11;
         totalTime = SystemClock.elapsedRealtime();
         floatArrayList = new ArrayList<>();
         aFpsArray = new ArrayList<>();
@@ -200,22 +200,16 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
         Log.i(TAG, "OnFloorObjectCreation");
-        //tempModelPosition = new float[]{0.0f, ceilingHeight, 0.0f}; //sets the position of the ceiling
-        //ceiling = new FloorObject(tempModelPosition);
         headRotation = new float[4];
         headView = new float[16];
-        initializeGvrView();
-        scheduleAddCubes();
-        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        // Initialize 3D audio engine.
-        //gvrAudioEngine = new GvrAudioEngine(this, GvrAudioEngine.RenderingMode.BINAURAL_HIGH_QUALITY);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
     }
 
    /**
     * Creates an array list of float objects for object position
     */
-    public void floatArrayListBuilder(int n){
+    private void floatArrayListBuilder(int n){
         float start = -20f;
         float elevation = 0.0f;
         for(int p=0; p<(n/11); p++){
@@ -225,12 +219,12 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
                 start=start+(float)40/11;
             }
             start = -20.0f;
-            elevation += 3.0f;
+            elevation += 5.0f;
         }
     }
 
 
-    public void initializeGvrView() {
+    private void initializeGvrView() {
         setContentView(R.layout.common_ui);
 
         GvrView gvrView = (GvrView) findViewById(R.id.gvr_view);
@@ -249,7 +243,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     }
 
     //resets the gvrView but does not show the transition screen
-    public void updateGvrView(){
+    private void updateGvrView(){
         setContentView(R.layout.common_ui);
 
         GvrView gvrView = (GvrView) findViewById(R.id.gvr_view);
@@ -268,7 +262,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     @Override
     public void onPause() {
-        //gvrAudioEngine.pause();
         super.onPause();
         finish();
     }
@@ -276,7 +269,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     @Override
     public void onResume() {
         super.onResume();
-        //gvrAudioEngine.resume();
     }
 
     @Override
@@ -302,38 +294,27 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
-        //create and draw cube
-        /*for (int n = 0; n < cubeArray.length; n++) {
-            makeObject(cubeArray[n]);
-            Log.i(TAG, "onCubeCreated");
-            updateModelPosition(cubeArray[n]);
-            Log.i(TAG, "onCubePositionUpdated");
-            drawObject(cubeArray[n]);
-            Log.i(TAG, "onCubeDrawn");
-        }*/
+        vertexShader = loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
+        gridShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.grid_fragment);
+        passthroughShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.passthrough_fragment);
+
+        makeCubeObject();
+        makeFloorObject();
 
         //create and draw the cubes
-        for (int n = 0; n < cubeArrayList.size(); n++) {
-            makeObject(cubeArrayList.get(n));
+        int size = cubeArrayList.size();
+        for (int n = 0; n < size; n++) {
+            setCubeParams(cubeArrayList.get(n));
             updateModelPosition(cubeArrayList.get(n));
             drawObject(cubeArrayList.get(n));
         }
 
         //create and draw floor
-        makeObject(floor);
+        //makeObject(floor);
+        setFloorParams(floor);
         Matrix.setIdentityM(floor.modelObject, 0);
         Matrix.translateM(floor.modelObject, 0, 0, -floorDepth, 0); // Floor appears below user.
         drawObject(floor);
-
-        //create and draw the ceiling
-       /* makeObject(ceiling);
-        Log.i(TAG, "onCeilingCreated");
-        Matrix.setIdentityM(ceiling.modelObject, 0);
-        Matrix.translateM(ceiling.modelObject, 0, 0, ceilingHeight, 0); //ceiling appears above the user
-        Log.i(TAG,"onCeilingPositionUpdated");
-        drawObject(ceiling);
-        Log.i(TAG, "onCeilingDrawn");*/
-
 
         checkGLError("onSurfaceCreated");
     }
@@ -341,73 +322,99 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     /**
      * Creates an general object
      */
-    public void makeObject(WorldObject object) {
-
-        ByteBuffer bbVertices = ByteBuffer.allocateDirect(object.getCoords().length * 4);
+    private void makeCubeObject() {
+        ByteBuffer bbVertices = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_COORDS.length * 4);
         bbVertices.order(ByteOrder.nativeOrder());
-        object.vertices = bbVertices.asFloatBuffer();
-        object.vertices.put(object.getCoords());
-        object.vertices.position(0);
+        cubeVertices = bbVertices.asFloatBuffer();
+        cubeVertices.put(WorldLayoutData.CUBE_COORDS);
+        cubeVertices.position(0);
 
-        ByteBuffer bbNormals = ByteBuffer.allocateDirect(object.getNormals().length * 4);
-        bbNormals.order(ByteOrder.nativeOrder());
-        object.normals = bbNormals.asFloatBuffer();
-        object.normals.put(object.getNormals());
-        object.normals.position(0);
-
-        ByteBuffer bbColors = ByteBuffer.allocateDirect(object.getColors().length * 4);
+        ByteBuffer bbColors = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_COLORS.length * 4);
         bbColors.order(ByteOrder.nativeOrder());
-        object.colors = bbColors.asFloatBuffer();
-        object.colors.put(object.getColors());
-        object.colors.position(0);
+        cubeColors = bbColors.asFloatBuffer();
+        cubeColors.put(WorldLayoutData.CUBE_COLORS);
+        cubeColors.position(0);
 
-        int vertexShader = loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
-        int gridShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.grid_fragment);
-        int passthroughShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.passthrough_fragment);
+        ByteBuffer bbNormals = ByteBuffer.allocateDirect(WorldLayoutData.CUBE_NORMALS.length * 4);
+        bbNormals.order(ByteOrder.nativeOrder());
+        cubeNormals = bbNormals.asFloatBuffer();
+        cubeNormals.put(WorldLayoutData.CUBE_NORMALS);
+        cubeNormals.position(0);
 
-        if (object.getType() == 1) {
-            object.objectProgram = GLES20.glCreateProgram();
-            GLES20.glAttachShader(object.objectProgram, vertexShader);
-            GLES20.glAttachShader(object.objectProgram, gridShader);
-            GLES20.glLinkProgram(object.objectProgram);
-            GLES20.glUseProgram(object.objectProgram);
-        } else if (object.getType() == 2) {
-            object.objectProgram = GLES20.glCreateProgram();
-            GLES20.glAttachShader(object.objectProgram, vertexShader);
-            GLES20.glAttachShader(object.objectProgram, passthroughShader);
-            GLES20.glLinkProgram(object.objectProgram);
-            GLES20.glUseProgram(object.objectProgram);
-        }
 
-        checkGLError("Object program");
+        cubeProgram = GLES20.glCreateProgram();
+        GLES20.glAttachShader(cubeProgram, vertexShader);
+        GLES20.glAttachShader(cubeProgram, passthroughShader);
+        GLES20.glLinkProgram(cubeProgram);
+        GLES20.glUseProgram(cubeProgram);
 
-        object.objectModelParam = GLES20.glGetUniformLocation(object.objectProgram, "u_Model");
-        object.objectModelViewParam = GLES20.glGetUniformLocation(object.objectProgram, "u_MVMatrix");
-        object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(object.objectProgram, "u_MVP");
-        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
-
-        object.objectPositionParam = GLES20.glGetAttribLocation(object.objectProgram, "a_Position");
-        object.objectNormalParam = GLES20.glGetAttribLocation(object.objectProgram, "a_Normal");
-        object.objectColorParam = GLES20.glGetAttribLocation(object.objectProgram, "a_Color");
-
-        checkGLError("Object program params");
+        checkGLError("cube program");
 
     }
 
+    private void makeFloorObject(){
+        ByteBuffer bbVertices = ByteBuffer.allocateDirect(WorldLayoutData.FLOOR_COORDS.length * 4);
+        bbVertices.order(ByteOrder.nativeOrder());
+        floorVertices = bbVertices.asFloatBuffer();
+        floorVertices.put(WorldLayoutData.FLOOR_COORDS);
+        floorVertices.position(0);
+
+        ByteBuffer bbColors = ByteBuffer.allocateDirect(WorldLayoutData.FLOOR_COLORS.length * 4);
+        bbColors.order(ByteOrder.nativeOrder());
+        floorColors = bbColors.asFloatBuffer();
+        floorColors.put(WorldLayoutData.FLOOR_COLORS);
+        floorColors.position(0);
+
+        ByteBuffer bbNormals = ByteBuffer.allocateDirect(WorldLayoutData.FLOOR_NORMALS.length * 4);
+        bbNormals.order(ByteOrder.nativeOrder());
+        floorNormals = bbNormals.asFloatBuffer();
+        floorNormals.put(WorldLayoutData.FLOOR_NORMALS);
+        floorNormals.position(0);
+
+
+        floorProgram = GLES20.glCreateProgram();
+        GLES20.glAttachShader(floorProgram, vertexShader);
+        GLES20.glAttachShader(floorProgram, gridShader);
+        GLES20.glLinkProgram(floorProgram);
+        GLES20.glUseProgram(floorProgram);
+
+        checkGLError("Floor program");
+    }
+
+    private void setCubeParams(WorldObject object){
+        object.objectModelParam = GLES20.glGetUniformLocation(cubeProgram, "u_Model");
+        object.objectModelViewParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVMatrix");
+        object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVP");
+        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
+
+        object.objectPositionParam = GLES20.glGetAttribLocation(cubeProgram, "a_Position");
+        object.objectNormalParam = GLES20.glGetAttribLocation(cubeProgram, "a_Normal");
+        object.objectColorParam = GLES20.glGetAttribLocation(cubeProgram, "a_Color");
+
+        checkGLError("Object program params");
+    }
+
+
+    private void setFloorParams(WorldObject object){
+        object.objectModelParam = GLES20.glGetUniformLocation(floorProgram, "u_Model");
+        object.objectModelViewParam = GLES20.glGetUniformLocation(floorProgram, "u_MVMatrix");
+        object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(floorProgram, "u_MVP");
+        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
+
+        object.objectPositionParam = GLES20.glGetAttribLocation(floorProgram, "a_Position");
+        object.objectNormalParam = GLES20.glGetAttribLocation(floorProgram, "a_Normal");
+        object.objectColorParam = GLES20.glGetAttribLocation(floorProgram, "a_Color");
+
+        checkGLError("Object program params");
+    }
 
     /**
      * Updates the cube model position.
      */
-    protected void updateModelPosition(WorldObject object) {
+    private void updateModelPosition(WorldObject object) {
         Matrix.setIdentityM(object.modelObject, 0);
         Matrix.translateM(object.modelObject, 0, object.getModelPosition(0),
                 object.getModelPosition(1), object.getModelPosition(2));
-
-        // Update the sound location to match it with the new cube position.
-   /* if (soundId != GvrAudioEngine.INVALID_ID) {
-      gvrAudioEngine.setSoundObjectPosition(
-          soundId, cube.modelPosition[0], cube.modelPosition[1], cube.modelPosition[2]);
-    }*/
         checkGLError("updateCubePosition");
     }
 
@@ -417,7 +424,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      * @param resId The resource ID of the raw text file about to be turned into a shader.
      * @return The context of the text file, or null in case of error.
      */
-    protected String readRawTextFile(int resId) {
+    private String readRawTextFile(int resId) {
         InputStream inputStream = getResources().openRawResource(resId);
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -453,30 +460,23 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
             frameCounter++;
             fps = 1 / ((double) frameTime / 1000);
             totalFps=totalFps+fps;
-            aFps = (totalFps) / frameCounter;
+            aFps=totalFps/frameCounter;
         }
-        //Log.i(TAG, Double.toString(averageFrameTime));
-        Log.i(TAG, Double.toString(aFps)+" "+Double.toString(fps)+" "+Integer.toString(frameCounter));
         setCubeRotation();
 
-        // Build the camera matrix and apply it to the ModelView.
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
         headTransform.getHeadView(headView, 0);
-
-        // Update the 3d audio engine with the most recent head rotation.
-        //headTransform.getQuaternion(headRotation, 0);
-        //gvrAudioEngine.setHeadRotation(
-        // headRotation[0], headRotation[1], headRotation[2], headRotation[3]);
-        // Regular update call to GVR audio engine.
-        //gvrAudioEngine.update();
         checkGLError("onReadyToDraw");
+
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+        checkGLError("colorParam");
     }
 
-    protected void setCubeRotation() {
+    private void setCubeRotation() {
         //set the rotation for each cube in the ArrayList
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
-            //Matrix.setRotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
         }
 
 
@@ -489,10 +489,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      */
     @Override
     public void onDrawEye(Eye eye) {
-        GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-
-        checkGLError("colorParam");
+        /*GLES20.glEnable(GLES20.GL_DEPTH_TEST);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);*/
 
         // Apply the eye transformation to the camera.
         Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, camera, 0);
@@ -510,10 +508,11 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
         for(int n=0; n<cubeArrayList.size(); n++){
             CubeObject c1 = cubeArrayList.get(n);
-            Matrix.multiplyMM(modelView, 0, view, 0, c1.modelObject, 0);
-            Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-            drawObject(c1);
-
+            if(c1!=null) {
+                Matrix.multiplyMM(modelView, 0, view, 0, c1.modelObject, 0);
+                Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
+                drawObject(c1);
+            }
         }
 
 
@@ -537,10 +536,10 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     public void onFinishFrame(Viewport viewport) {
     }
 
-    static boolean stillRunning;
+    private static boolean stillRunning;
 
     //adds a new row of cubes every 5 seconds
-   public void scheduleAddCubes(){
+   private void scheduleAddCubes(){
         handler.postDelayed(new Runnable(){
         public void run() {
             if(stillRunning) {
@@ -556,8 +555,15 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      * <p/>
      * <p>We've set all of our transformation matrices. Now we simply pass them into the shader.
      */
-    public void drawObject(WorldObject object) {
-        GLES20.glUseProgram(object.objectProgram);
+    private void drawObject(WorldObject object) {
+        int type = object.getType();
+
+        if(type == 1){
+            GLES20.glUseProgram(floorProgram);
+        }
+        else if(type==2) {
+            GLES20.glUseProgram(cubeProgram);
+        }
 
         //GLES20.glUniform3fv(object.objectLightPosParam, 1, lightPosInEyeSpace, 0);
 
@@ -568,24 +574,45 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         GLES20.glUniformMatrix4fv(object.objectModelViewParam, 1, false, modelView, 0);
 
         // Set the position of the cube
-        GLES20.glVertexAttribPointer(
-                object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, object.vertices);
+       /* GLES20.glVertexAttribPointer(
+                object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, object.vertices);*/
+        if(type==1){
+            GLES20.glVertexAttribPointer(
+                    object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, floorVertices);
+
+            GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, floorNormals);
+            // GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, object.colors);
+            GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, floorColors);
+            //isLookingAtObject() ? cubeFoundColors : cubeColors);
+
+        }
+
+        if(type==2) {
+            GLES20.glVertexAttribPointer(
+                    object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, cubeVertices);
+
+            // Set the normal positions of the cube, again for shading
+            //GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, object.normals);
+            GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
+            // GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, object.colors);
+            GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, cubeColors);
+            //isLookingAtObject() ? cubeFoundColors : cubeColors);
+        }
 
         // Set the ModelViewProjection matrix in the shader.
         GLES20.glUniformMatrix4fv(object.objectModelViewProjectionParam, 1, false, modelViewProjection, 0);
-
-        // Set the normal positions of the cube, again for shading
-        GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, object.normals);
-        GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, object.colors);
-        //isLookingAtObject() ? cubeFoundColors : cubeColors);
-
         // Enable vertex arrays
         GLES20.glEnableVertexAttribArray(object.objectPositionParam);
         GLES20.glEnableVertexAttribArray(object.objectNormalParam);
         GLES20.glEnableVertexAttribArray(object.objectColorParam);
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
-        checkGLError("Drawing cube");
+        if(object.getType()==1){
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
+            checkGLError("Drawing floor");
+        }
+        else if(object.getType()==2) {
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
+            checkGLError("Drawing cube");
+        }
     }
 
     /**
@@ -604,9 +631,11 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         // Always give user feedback.
         vibrator.vibrate(50);
 
+        updateGvrView();
+
         //adds a new row of cubes
         int oldSize = cubeArrayList.size();
-        int newSize = oldSize+11;
+        int newSize = oldSize+22;
         frameCounter=0;
         totalFrameTime=0;
         floatArrayList.clear();
@@ -623,21 +652,23 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Log.i(TAG, "OnFloorObjectCreation");
         headRotation = new float[4];
         headView = new float[16];
-        updateGvrView();
     }
 
-    public void addNewCubeRow(){
-        //give some user feedback
-        //vibrator.vibrate(50);
+    private void addNewCubeRow(){
+        GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
+        onRendererShutdown();
+        view.shutdown();
+        if(aFps<10){
+            showResults();
+        }
+        updateGvrView();
 
         //adds a new row of cubes
         int oldSize = cubeArrayList.size();
         int newSize = oldSize+11;
+        //cpuUse = readUsage();
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
         aFpsArray.add(aFps);
-        if(aFps<10){
-            showResults();
-        }
         aFps = 0;
         frameCounter = 0;
         totalFps = 0;
@@ -653,9 +684,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Log.i(TAG, "OnFloorObjectCreation");
         headRotation = new float[4];
         headView = new float[16];
-        //onRendererShutdown();
-        updateGvrView();
-        //initializeGvrView();
 
     }
 
@@ -691,36 +719,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         updateModelPosition(object);
     }
 
-    private float[] getRandomLocation() {
-        Random rand = new Random();
-        float[] location = new float[3];
-        float xDist = rand.nextFloat() * (14) + (-7);
-        float zDist;
-        if ((xDist < 3) && (xDist > -3)) {
-            int zInt = rand.nextInt(10);
-            if (zInt > 5) {
-                zDist = rand.nextFloat() * (MAX_MODEL_DISTANCE - MIN_MODEL_DISTANCE) + MIN_MODEL_DISTANCE;
-            } else {
-                zDist = -(rand.nextFloat() * (MAX_MODEL_DISTANCE - MIN_MODEL_DISTANCE) + MIN_MODEL_DISTANCE);
-            }
-        } else {
-            zDist = rand.nextFloat() * (MAX_MODEL_DISTANCE - (-MAX_MODEL_DISTANCE)) + (-MAX_MODEL_DISTANCE);
-        }
-
-
-        float angleY = (float) Math.random() * 80 - 40; // Angle in Y plane, between -40 and 40.
-        angleY = (float) Math.toRadians(angleY);
-        float newY = (float) Math.tan(angleY) * zDist;
-
-        location[0] = xDist;
-        location[1] = newY;
-        location[2] = zDist;
-
-        return location;
-    }
-    public void showResults(){
+    private void showResults(){
         Intent intent = new Intent(this, ResultActivity.class);
-        //intent.putExtra(EXTRA_MESSAGE, i);
         float[] resArray = new float[aFpsArray.size()];
         for(int i=0; i<resArray.length; i++){
             resArray[i]=aFpsArray.get(i).floatValue();
@@ -730,26 +730,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         startActivity(intent);
     }
 
-    /**
-     * Check if user is looking at object by calculating where the object is in eye-space.
-     *
-     * @return true if the user is looking at the object.
-     */
-    /*private boolean isLookingAtObject() {
-        // Convert object space to camera space. Use the headView from onNewFrame.
-        Matrix.multiplyMM(modelView, 0, headView, 0, cube.modelObject, 0);
-        Matrix.multiplyMV(tempPosition, 0, modelView, 0, POS_MATRIX_MULTIPLY_VEC, 0);
-
-        float pitch = (float) Math.atan2(tempPosition[1], -tempPosition[2]);
-        float yaw = (float) Math.atan2(tempPosition[0], -tempPosition[2]);
-
-        return Math.abs(pitch) < PITCH_LIMIT && Math.abs(yaw) < YAW_LIMIT;
-    }*/
     public static float[] getLightPosInEyeSpace() {
         return lightPosInEyeSpace;
     }
 
-    // public static GvrAudioEngine getGvrAudioEngine(){
-    //return gvrAudioEngine;
-    //}
 }

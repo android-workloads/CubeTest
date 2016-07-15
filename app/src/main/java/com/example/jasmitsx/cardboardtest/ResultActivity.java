@@ -28,7 +28,9 @@ public class ResultActivity extends AppCompatActivity {
         int resultLen = result.length;
         EditText editText = (EditText) findViewById(R.id.myEditText);
         for(int i=0; i<resultLen; i++){
-            editText.append(Integer.toString(i+1)+" ");
+            String oString = Integer.toString(i+1);
+            editText.append(oString);
+            editText.append(" ");
             editText.append(Float.toString(result[i]));
             editText.append("\n");
         }

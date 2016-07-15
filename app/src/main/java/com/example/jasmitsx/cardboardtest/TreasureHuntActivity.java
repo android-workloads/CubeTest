@@ -2,12 +2,15 @@ package com.example.jasmitsx.cardboardtest;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.os.BatteryManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.os.Vibrator;
 import android.util.Log;
-import android.os.SystemClock;
 
 import com.google.vr.sdk.base.Eye;
 import com.google.vr.sdk.base.GvrActivity;
@@ -50,6 +53,8 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.0f;
 
+    private Handler handler = new Handler();
+
     private static final int COORDS_PER_VERTEX = 3;
 
     // We keep the light always position just above the user.
@@ -89,17 +94,24 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private float[][] floatArray;
     ArrayList<float[]> floatArrayList;
 
-    //example coordinate sets
-    private float[] f1 = {0.0f, 0.0f, -MAX_MODEL_DISTANCE / 2.0f};
-    private float[] f2 = {0.0f, 0.0f, MAX_MODEL_DISTANCE / 2.0f};
-    private float[] f3 = {3.0f, 0.0f, 0.0f};
-    private float[] f4 = {-3.0f, 0.0f, 0.0f};
-
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
     private float floorDepth = 20f;
     private float ceilingHeight = 40f;
 
+    //shaders
+    public int vertexShader;
+    public int gridShader;
+   public int passthroughShader;
+
+    private IntentFilter ifilter;
+    private Intent batteryStatus;
+    private float startPct;
+    private float endPct;
+
+
     private Vibrator vibrator;
+
+    public final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
 
     //private static GvrAudioEngine gvrAudioEngine;
     //private volatile int soundId = GvrAudioEngine.INVALID_ID;
@@ -135,10 +147,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         return shader;
     }
 
-    private void printdetails(float afps, double aut,double aaps, float jps, float acps){
-        //String s = String.format("%d %.4f %.4f", numberOfCubes, afps, aut, aaps, jps, acps);
-    }
-
     /**
      * Checks if we've had an error inside of OpenGL ES, and if so what that error is.
      *
@@ -158,13 +166,26 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "On start TreasureHuntActivity");
         super.onCreate(savedInstanceState);
+
+        initializeGvrView();
+
+        stillRunning = true;
+        scheduleAddCubes();
+
         Intent intent = getIntent();
         int numberOfCubes= intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 1); //gets the number of cubes wanted by the user
-        //floatArray = new float[][]{f1, f2, f3, f4}; //Hardcoded array of floats to display cubes
-        //int x=numberOfCubes;   //hardcoded value determining the number of cubes created. If using floatArrayBuilder must be a multiple of 11
-        //floatArray = new float[numberOfCubes][];
-        //floatArray = floatArrayBuilder(numberOfCubes); //Creates an array of location floats for the specified number of cubes
+
+        ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED); //define function
+        batteryStatus = getApplicationContext().registerReceiver(null, ifilter);
+
+        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+        startPct = level / (float)scale;
+        Log.i(TAG, "Starting battery Percentage: "+Float.toString(startPct));
+
         floatArrayList = new ArrayList<>();
         floatArrayListBuilder(numberOfCubes);
         camera = new float[16];
@@ -177,16 +198,16 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         for (int n = 0; n < floatArrayList.size(); n++) {
             CubeObject c1 = new CubeObject(floatArrayList.get(n), n);
             cubeArrayList.add(c1);
-            Log.i(TAG, "OnCubeObjectCreation");
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
-        Log.i(TAG, "OnFloorObjectCreation");
         //tempModelPosition = new float[]{0.0f, ceilingHeight, 0.0f}; //sets the position of the ceiling
         //ceiling = new FloorObject(tempModelPosition);
         headRotation = new float[4];
         headView = new float[16];
-        initializeGvrView();
+        Log.i(TAG,"before initilize gvrView");
+        //initializeGvrView();
+        Log.i(TAG,"after initilzie gvrView");
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // Initialize 3D audio engine.
@@ -225,7 +246,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
                 start=start+(float)40/11;
             }
             start = -20.0f;
-            elevation += 3.0f;
+            elevation += 5.0f;
         }
     }
 
@@ -301,44 +322,31 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
-        //create and draw cube
-        /*for (int n = 0; n < cubeArray.length; n++) {
-            makeObject(cubeArray[n]);
-            Log.i(TAG, "onCubeCreated");
-            updateModelPosition(cubeArray[n]);
-            Log.i(TAG, "onCubePositionUpdated");
-            drawObject(cubeArray[n]);
-            Log.i(TAG, "onCubeDrawn");
-        }*/
+        long beforeTime = SystemClock.elapsedRealtime();
 
-        //create and draw the cubes
-        for (int n = 0; n < cubeArrayList.size(); n++) {
-            makeObject(cubeArrayList.get(n));
-            Log.i(TAG, "onCubeCreated");
-            updateModelPosition(cubeArrayList.get(n));
-            Log.i(TAG, "obCubePositionUpdated");
-            drawObject(cubeArrayList.get(n));
-            Log.i(TAG, "onCubeDrawn");
+        vertexShader = loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
+        gridShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.grid_fragment);
+        passthroughShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.passthrough_fragment);
+
+        for(int n=0; n<cubeArrayList.size(); n++){
+            makeObject(cubeArrayList.get(n), 2);
         }
 
+        for(int n=0; n<cubeArrayList.size(); n++){
+            updateModelPosition(cubeArrayList.get(n));
+        }
+
+        for(int n=0; n<cubeArrayList.size(); n++){
+            drawObject(cubeArrayList.get(n));
+        }
+        long afterTime = SystemClock.elapsedRealtime();
+        Log.i(TAG, "Creation Time: "+Long.toString(afterTime-beforeTime));
+
         //create and draw floor
-        makeObject(floor);
-        Log.i(TAG, "onFloorCreated");
+        makeObject(floor, 1);
         Matrix.setIdentityM(floor.modelObject, 0);
         Matrix.translateM(floor.modelObject, 0, 0, -floorDepth, 0); // Floor appears below user.
-        Log.i(TAG, "onFloorPositionUpdated");
         drawObject(floor);
-        Log.i(TAG, "onFloorDrawn");
-
-        //create and draw the ceiling
-       /* makeObject(ceiling);
-        Log.i(TAG, "onCeilingCreated");
-        Matrix.setIdentityM(ceiling.modelObject, 0);
-        Matrix.translateM(ceiling.modelObject, 0, 0, ceilingHeight, 0); //ceiling appears above the user
-        Log.i(TAG,"onCeilingPositionUpdated");
-        drawObject(ceiling);
-        Log.i(TAG, "onCeilingDrawn");*/
-
 
         checkGLError("onSurfaceCreated");
     }
@@ -346,7 +354,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     /**
      * Creates an general object
      */
-    public void makeObject(WorldObject object) {
+    public void makeObject(WorldObject object, int type) {
 
         ByteBuffer bbVertices = ByteBuffer.allocateDirect(object.getCoords().length * 4);
         bbVertices.order(ByteOrder.nativeOrder());
@@ -366,17 +374,13 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         object.colors.put(object.getColors());
         object.colors.position(0);
 
-        int vertexShader = loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
-        int gridShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.grid_fragment);
-        int passthroughShader = loadGLShader(GLES20.GL_FRAGMENT_SHADER, R.raw.passthrough_fragment);
-
-        if (object.getType() == 1) {
+        if (type == 1) {
             object.objectProgram = GLES20.glCreateProgram();
             GLES20.glAttachShader(object.objectProgram, vertexShader);
             GLES20.glAttachShader(object.objectProgram, gridShader);
             GLES20.glLinkProgram(object.objectProgram);
             GLES20.glUseProgram(object.objectProgram);
-        } else if (object.getType() == 2) {
+        } else if (type == 2) {
             object.objectProgram = GLES20.glCreateProgram();
             GLES20.glAttachShader(object.objectProgram, vertexShader);
             GLES20.glAttachShader(object.objectProgram, passthroughShader);
@@ -461,21 +465,12 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         if(averageFrameTime != 0) {
             aFps = 1 / (averageFrameTime / 1000);
         }
-        //Log.i(TAG, Double.toString(averageFrameTime));
-        Log.i(TAG, Double.toString(fps));
         setCubeRotation();
 
         // Build the camera matrix and apply it to the ModelView.
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
 
         headTransform.getHeadView(headView, 0);
-
-        // Update the 3d audio engine with the most recent head rotation.
-        //headTransform.getQuaternion(headRotation, 0);
-        //gvrAudioEngine.setHeadRotation(
-        // headRotation[0], headRotation[1], headRotation[2], headRotation[3]);
-        // Regular update call to GVR audio engine.
-        //gvrAudioEngine.update();
 
         checkGLError("onReadyToDraw");
     }
@@ -532,7 +527,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         Matrix.multiplyMM(modelView, 0, view, 0, floor.modelObject, 0);
         Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
         drawObject(floor);
-
         /**
          * Draws the ceiling object
          */
@@ -545,6 +539,36 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     public void onFinishFrame(Viewport viewport) {
     }
 
+    private static boolean stillRunning;
+
+    //adds a new row of cubes every 5 seconds
+    private void scheduleAddCubes(){
+        handler.postDelayed(new Runnable(){
+            public void run() {
+                if(stillRunning) {
+                    endActivity();
+                    handler.postDelayed(this, 60000);
+                }
+            }
+        }, 60000);
+    }
+
+    private void endActivity(){
+
+        batteryStatus = getApplicationContext().registerReceiver(null, ifilter);
+        int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+        endPct = level / (float)scale;
+
+        //Log.i(TAG, "Ending battery Percentage: "+Float.toString(endPct));
+        Intent intent = new Intent(this, BatteryResult.class);
+        float percentDrop = startPct - endPct;
+        String dropString = Float.toString(percentDrop);
+        stillRunning = false;
+        intent.putExtra(EXTRA_MESSAGE, dropString);
+        startActivity(intent);
+    }
     /**
      * Draw the cube.
      * <p/>
@@ -577,9 +601,14 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         GLES20.glEnableVertexAttribArray(object.objectPositionParam);
         GLES20.glEnableVertexAttribArray(object.objectNormalParam);
         GLES20.glEnableVertexAttribArray(object.objectColorParam);
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
-        checkGLError("Drawing cube");
+        if(object.getType()==1){
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
+            checkGLError("Drawing floor");
+        }
+        else if(object.getType()==2) {
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
+            checkGLError("Drawing cube");
+        }
     }
 
     /**
@@ -595,32 +624,40 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      */
     @Override
     public void onCardboardTrigger() {
-       /* Log.i(TAG, "onCardboardTrigger");
-        for (int n = 0; n < cubeArray.length; n++) {
-            hideObject(cubeArray[n]);
-        }*/
-        //add a mo re useful onCardboardTrigger function than making the cubes hard to find
-
         // Always give user feedback.
         vibrator.vibrate(50);
 
+        updateGvrView();
+        //record the size of the old cubeArrayList and add 11
         int oldSize = cubeArrayList.size();
         int newSize = oldSize+11;
+        //reset the frameCounter and totalFrameTime to keep FPS count accurate
         frameCounter=0;
         totalFrameTime=0;
+        //empty the floatArrayList and cubeArrayList in preperation to create new cubeArrayList
         floatArrayList.clear();
         cubeArrayList.clear();
+
+        //reset the floor
+        floor = null;
+
+        //refill the floatArrayList, adding a new row of cubes
         floatArrayListBuilder(newSize);
+
+        //rebuild the cubeArrayList with the new floatArrayList
         for(int i=0; i<floatArrayList.size(); i++){
             CubeObject c1 = new CubeObject(floatArrayList.get(i), i);
             cubeArrayList.add(i, c1);
         }
+
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
-        Log.i(TAG, "OnFloorObjectCreation");
+
         headRotation = new float[4];
         headView = new float[16];
-        updateGvrView();
+        //GvrView view = (GvrView) findViewById(R.id.gvr_view);
+        //view.shutdown();
+        //art.DetachCurrentThread();
         /*if (isLookingAtObject()) {
             hideObject(cube);
         }*/
@@ -706,8 +743,72 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         return lightPosInEyeSpace;
     }
 
+    //running an adb command locally(still confused here)
+   /*public static void startDaemon(Context context){
+        Runtime rt = Runtime.getRuntime();
+        byte buf[]=new byte[16];
+        int ct;
+        String sbuf;
+        final String [] cmd = new String[]{"c:\\Users\\jasmitsx\\AppData\\Local\\Android\\sdk\\platform-tools","adb devices"};
+        try{
+            Process subproc = rt.exec(cmd);
+            InputStream is=subproc.getInputStream();
+            ct=is.read(buf);
+            subproc.destroy();
+            subproc.waitFor();
+        } catch (Exception e){
+            return;
+        }
+        sbuf=new String(buf,0,ct);
+        sbuf=sbuf.trim();
+        Log.i(TAG, sbuf);
+        //System.out.println("The string is '"+sbuf+"' with length "+sbuf.length());
+        //Toast.makeText(context, "Daemon start status : "+sbuf, Toast.LENGTH_SHORT).show();
+
+    }*/
+
     // public static GvrAudioEngine getGvrAudioEngine(){
     //return gvrAudioEngine;
     //}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
