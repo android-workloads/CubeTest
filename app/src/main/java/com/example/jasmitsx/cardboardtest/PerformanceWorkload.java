@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -195,11 +196,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         for (int n = 0; n < floatArrayList.size(); n++) {
             CubeObject c1 = new CubeObject(floatArrayList.get(n), n);
             cubeArrayList.add(c1);
-            Log.i(TAG, "OnCubeObjectCreation");
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
-        Log.i(TAG, "OnFloorObjectCreation");
         headRotation = new float[4];
         headView = new float[16];
 
@@ -291,7 +290,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      */
     @Override
     public void onSurfaceCreated(EGLConfig config) {
-        Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well.
 
         vertexShader = loadGLShader(GLES20.GL_VERTEX_SHADER, R.raw.light_vertex);
@@ -310,7 +308,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         }
 
         //create and draw floor
-        //makeObject(floor);
         setFloorParams(floor);
         Matrix.setIdentityM(floor.modelObject, 0);
         Matrix.translateM(floor.modelObject, 0, 0, -floorDepth, 0); // Floor appears below user.
@@ -489,9 +486,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      */
     @Override
     public void onDrawEye(Eye eye) {
-        /*GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);*/
-
         // Apply the eye transformation to the camera.
         Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, camera, 0);
 
@@ -508,11 +502,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
         for(int n=0; n<cubeArrayList.size(); n++){
             CubeObject c1 = cubeArrayList.get(n);
-            if(c1!=null) {
-                Matrix.multiplyMM(modelView, 0, view, 0, c1.modelObject, 0);
-                Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-                drawObject(c1);
-            }
+            Matrix.multiplyMM(modelView, 0, view, 0, c1.modelObject, 0);
+            Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
+            drawObject(c1);
         }
 
 
@@ -649,7 +641,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
-        Log.i(TAG, "OnFloorObjectCreation");
         headRotation = new float[4];
         headView = new float[16];
     }
@@ -658,6 +649,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
         onRendererShutdown();
         view.shutdown();
+        //float cpuUsage = readUsage();
+        //Log.i(TAG, Float.toString(cpuUsage));
         if(aFps<10){
             showResults();
         }
@@ -732,6 +725,40 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     public static float[] getLightPosInEyeSpace() {
         return lightPosInEyeSpace;
+    }
+
+    private float readUsage() {
+        try {
+            RandomAccessFile reader = new RandomAccessFile("/proc/stat", "r");
+            String load = reader.readLine();
+
+            String[] toks = load.split(" +");  // Split on one or more spaces
+
+            long idle1 = Long.parseLong(toks[4]);
+            long cpu1 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
+                    + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
+
+            try {
+                Thread.sleep(360);
+            } catch (Exception e) {}
+
+            reader.seek(0);
+            load = reader.readLine();
+            reader.close();
+
+            toks = load.split(" +");
+
+            long idle2 = Long.parseLong(toks[4]);
+            long cpu2 = Long.parseLong(toks[2]) + Long.parseLong(toks[3]) + Long.parseLong(toks[5])
+                    + Long.parseLong(toks[6]) + Long.parseLong(toks[7]) + Long.parseLong(toks[8]);
+
+            return (float)(cpu2 - cpu1) / ((cpu2 + idle2) - (cpu1 + idle1));
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        return 0;
     }
 
 }
