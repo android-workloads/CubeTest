@@ -541,16 +541,17 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     private static boolean stillRunning;
 
-    //adds a new row of cubes every 5 seconds
+    //Runs the workload for n milliseconds
     private void scheduleAddCubes(){
+        final int n=300000;
         handler.postDelayed(new Runnable(){
             public void run() {
                 if(stillRunning) {
                     endActivity();
-                    handler.postDelayed(this, 300000);
+                    handler.postDelayed(this, n);
                 }
             }
-        }, 300000);
+        }, n);
     }
 
     private void endActivity(){

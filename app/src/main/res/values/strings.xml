@@ -10,4 +10,6 @@
     <string name="performance_name">Performance Workload</string>
     <string name="result_name">Result Activity</string>
     <string name="batt_result_name">Battery Result Activity</string>
+    <string name="export_button">Export Database as SQLite</string>
+    <string name="export_csv_button">Export Database as CSV</string>
 </resources>

@@ -9,6 +9,16 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.jasmitsx.cardboardtest.ResultActivity">
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text = "@string/export_button"
+        android:onClick="exportDB"/>
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text = "@string/export_csv_button"
+        android:onClick="exportCsvDB"/>
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.os.Vibrator;
@@ -36,11 +37,9 @@ import javax.microedition.khronos.egl.EGLConfig;
 public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRenderer {
     private float[] tempModelPosition;
 
-    private CubeObject[] cubeArray;
     private ArrayList<CubeObject> cubeArrayList;
 
     private FloorObject floor;
-    private FloorObject ceiling;
 
     private static final String TAG = "TreasureHuntActivity";
 
@@ -53,7 +52,10 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.0f;
 
-    private Handler handler = new Handler();
+    private Handler h1 = new Handler();
+
+    private Handler h2 = new Handler();
+
 
     private static final int COORDS_PER_VERTEX = 3;
 
@@ -79,12 +81,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private ArrayList<Double> aFpsArray;
     private double totalFps=0;
 
-    //variables for CPU usage
-    private float cpuUse=0;
-
-    //time counter for elapsed time between new cube adds
-    private long totalTime;
-    private long elapsedTime;
 
     private float[] camera;
     private float[] view;
@@ -98,13 +94,11 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private float[] headRotation;
 
     //example coordinate array
-    private float[][] floatArray;
     private ArrayList<float[]> floatArrayList;
 
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
-    private float floorDepth = 20f;
-    private float ceilingHeight = 40f;
+    private float floorDepth = 20f;;
 
     private int vertexShader;
     private int gridShader;
@@ -119,6 +113,12 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private FloatBuffer floorColors;
     private FloatBuffer floorNormals;
     private int floorProgram;
+
+    protected DatabaseTable perfTable;
+
+    //CPU use
+    private float cpuUse;
+    private int cpuCount;
 
     private Vibrator vibrator;
 
@@ -176,13 +176,15 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         stillRunning = true;
+        cpuUse=0;
+        cpuCount=0;
         scheduleAddCubes();
+        scheduleCPURead();
+        perfTable = new DatabaseTable(this);
 
         initializeGvrView();
         int numberOfCubes = 11;
-        totalTime = SystemClock.elapsedRealtime();
         floatArrayList = new ArrayList<>();
         aFpsArray = new ArrayList<>();
         floatArrayListBuilder(numberOfCubes);
@@ -532,14 +534,30 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     //adds a new row of cubes every 5 seconds
    private void scheduleAddCubes(){
-        handler.postDelayed(new Runnable(){
+        h1.postDelayed(new Runnable(){
         public void run() {
             if(stillRunning) {
                 addNewCubeRow();
-                handler.postDelayed(this, 5000);
+                h1.postDelayed(this, 5000);
             }
         }
     }, 5000);
+    }
+
+    //takes a read of the CPUsage every second
+    private void scheduleCPURead(){
+        h2.postDelayed(new Runnable() {
+            public void run() {
+                if(stillRunning){
+                    cpuUse+=readUsage();
+                    cpuCount++;
+                    double currentUse = cpuUse / cpuCount;
+                    Log.i(TAG, "Current use: "+Double.toString(cpuUse)+" Current count: "+Integer.toString(cpuCount));
+                    Log.i(TAG, "Current usage: "+Double.toString(currentUse));
+                    h2.postDelayed(this, 1000);
+                }
+            }
+        }, 1000);
     }
 
     /**
@@ -632,8 +650,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         totalFrameTime=0;
         floatArrayList.clear();
         cubeArrayList.clear();
-        totalTime = SystemClock.elapsedRealtime();
-        elapsedTime = 0;
         floatArrayListBuilder(newSize);
         for(int i=0; i<floatArrayList.size(); i++){
             CubeObject c1 = new CubeObject(floatArrayList.get(i), i);
@@ -646,11 +662,18 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     }
 
     private void addNewCubeRow(){
+        double use = (cpuUse)/cpuCount;
+        cpuUse = 0;
+        cpuCount = 0;
         GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
         onRendererShutdown();
         view.shutdown();
         //float cpuUsage = readUsage();
         //Log.i(TAG, Float.toString(cpuUsage));
+        Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
+        //Log.i(TAG, "Current CPU load: "+Double.toString(use));
+        aFpsArray.add(aFps);
+        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, use));
         if(aFps<10){
             showResults();
         }
@@ -660,8 +683,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         int oldSize = cubeArrayList.size();
         int newSize = oldSize+11;
         //cpuUse = readUsage();
-        Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
-        aFpsArray.add(aFps);
         aFps = 0;
         frameCounter = 0;
         totalFps = 0;
@@ -713,13 +734,14 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     }
 
     private void showResults(){
+        //Debug.stopMethodTracing();
         Intent intent = new Intent(this, ResultActivity.class);
         float[] resArray = new float[aFpsArray.size()];
         for(int i=0; i<resArray.length; i++){
             resArray[i]=aFpsArray.get(i).floatValue();
         }
-        stillRunning = false;
         intent.putExtra(EXTRA_MESSAGE, resArray);
+        stillRunning = false;
         startActivity(intent);
     }
 
