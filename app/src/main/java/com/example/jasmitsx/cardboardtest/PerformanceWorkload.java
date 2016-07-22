@@ -75,11 +75,15 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     //time variables for fps calculation
     private long frameTime;
     private long previousFrameTime = SystemClock.elapsedRealtime();
-    private long totalFrameTime=0;
     private int frameCounter=0;
     private double aFps;
     private ArrayList<Double> aFpsArray;
     private double totalFps=0;
+
+    //other performance metrics
+    private long lastDT=0;
+    private int janks=0;
+    private double aps = 0;
 
 
     private float[] camera;
@@ -94,7 +98,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private float[] headRotation;
 
     //example coordinate array
-    private ArrayList<float[]> floatArrayList;
+    private ArrayList<float[]> positionArrayList;
 
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
@@ -179,15 +183,15 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         stillRunning = true;
         cpuUse=0;
         cpuCount=0;
-        scheduleAddCubes();
-        scheduleCPURead();
-        perfTable = new DatabaseTable(this);
+        scheduleAddCubes(); //adds a new row of cubes every 5 seconds
+        scheduleCPURead();  //reads the cpu usage every second
+        perfTable = new DatabaseTable(this);  //database to hold workload output information
 
         initializeGvrView();
-        int numberOfCubes = 11;
-        floatArrayList = new ArrayList<>();
+        int numberOfCubes = 11; //11 cubes per row because 11 fit in the view at once
+        positionArrayList = new ArrayList<>();
         aFpsArray = new ArrayList<>();
-        floatArrayListBuilder(numberOfCubes);
+        floatArrayListBuilder(numberOfCubes); //populates the positionArrayList with numberOfCubes positions
         camera = new float[16];
         view = new float[16];
         modelViewProjection = new float[16];
@@ -195,8 +199,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         modelFloor = new float[16];
         tempPosition = new float[4];
         cubeArrayList = new ArrayList<>();
-        for (int n = 0; n < floatArrayList.size(); n++) {
-            CubeObject c1 = new CubeObject(floatArrayList.get(n), n);
+        for (int n = 0; n < positionArrayList.size(); n++) {
+            CubeObject c1 = new CubeObject(positionArrayList.get(n), n);
             cubeArrayList.add(c1);
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
@@ -216,7 +220,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         for(int p=0; p<(n/11); p++){
             for(int i=0; i<11; i++){
                 float[] f1 = new float[]{start, elevation, -20.0f};
-                floatArrayList.add(f1);
+                positionArrayList.add(f1);
                 start=start+(float)40/11;
             }
             start = -20.0f;
@@ -243,7 +247,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         setGvrView(gvrView);
     }
 
-    //resets the gvrView but does not show the transition screen
+    //Same as initilizeGvrView but does not display the transition view
     private void updateGvrView(){
         setContentView(R.layout.common_ui);
 
@@ -274,12 +278,12 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     @Override
     public void onRendererShutdown() {
-        Log.i(TAG, "onRendererShutdown");
+        /*Log.i(TAG, "onRendererShutdown");*/
     }
 
     @Override
     public void onSurfaceChanged(int width, int height) {
-        Log.i(TAG, "onSurfaceChanged");
+        /*Log.i(TAG, "onSurfaceChanged");*/
     }
 
     /**
@@ -451,16 +455,17 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         //calculations for rudimentary FPS counter
         frameTime = SystemClock.elapsedRealtime() - previousFrameTime;
         previousFrameTime = SystemClock.elapsedRealtime();
-        if(frameTime<100) {
-            totalFrameTime = totalFrameTime + frameTime;
-        }
         double fps = 0;
         if(frameTime != 0) {
             frameCounter++;
             fps = 1 / ((double) frameTime / 1000);
             totalFps=totalFps+fps;
             aFps=totalFps/frameCounter;
+            if(lastDT!=0 && (frameTime-lastDT)>1.0f/120){
+                janks++;
+            }
         }
+        lastDT = frameTime;
         setCubeRotation();
 
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
@@ -517,13 +522,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Matrix.multiplyMM(modelView, 0, view, 0, floor.modelObject, 0);
         Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
         drawObject(floor);
-
-        /**
-         * Draws the ceiling object
-         */
-        /*Matrix.multiplyMM(modelView, 0, view, 0, ceiling.modelObject, 0);
-        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-        drawObject(ceiling);*/
     }
 
     @Override
@@ -551,13 +549,13 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
                 if(stillRunning){
                     cpuUse+=readUsage();
                     cpuCount++;
-                    double currentUse = cpuUse / cpuCount;
-                    Log.i(TAG, "Current use: "+Double.toString(cpuUse)+" Current count: "+Integer.toString(cpuCount));
-                    Log.i(TAG, "Current usage: "+Double.toString(currentUse));
-                    h2.postDelayed(this, 1000);
+                    //double currentUse = cpuUse / cpuCount;
+                   // Log.i(TAG, "Current use: "+Double.toString(cpuUse)+" Current count: "+Integer.toString(cpuCount));
+                    //Log.i(TAG, "Current usage: "+Double.toString(currentUse));
+                    h2.postDelayed(this, 500);
                 }
             }
-        }, 1000);
+        }, 500);
     }
 
     /**
@@ -640,40 +638,23 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     public void onCardboardTrigger() {
         // Always give user feedback.
         vibrator.vibrate(50);
-
-        updateGvrView();
-
-        //adds a new row of cubes
-        int oldSize = cubeArrayList.size();
-        int newSize = oldSize+22;
-        frameCounter=0;
-        totalFrameTime=0;
-        floatArrayList.clear();
-        cubeArrayList.clear();
-        floatArrayListBuilder(newSize);
-        for(int i=0; i<floatArrayList.size(); i++){
-            CubeObject c1 = new CubeObject(floatArrayList.get(i), i);
-            cubeArrayList.add(i, c1);
-        }
-        tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
-        floor = new FloorObject(tempModelPosition);
-        headRotation = new float[4];
-        headView = new float[16];
     }
 
     private void addNewCubeRow(){
         double use = (cpuUse)/cpuCount;
-        cpuUse = 0;
-        cpuCount = 0;
+        aps = cubeArrayList.size()*aFps;
         GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
         onRendererShutdown();
         view.shutdown();
         //float cpuUsage = readUsage();
         //Log.i(TAG, Float.toString(cpuUsage));
+        int jps = janks/5;
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
+        Log.i(TAG,"Janks per second: "+Integer.toString(jps));
+        Log.i(TAG, "Animations per second:"+Double.toString(aps));
         //Log.i(TAG, "Current CPU load: "+Double.toString(use));
         aFpsArray.add(aFps);
-        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, use));
+        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, use, jps, aps));
         if(aFps<10){
             showResults();
         }
@@ -682,20 +663,22 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         //adds a new row of cubes
         int oldSize = cubeArrayList.size();
         int newSize = oldSize+11;
-        //cpuUse = readUsage();
         aFps = 0;
         frameCounter = 0;
         totalFps = 0;
-        floatArrayList.clear();
+        cpuUse = 0;
+        cpuCount = 0;
+        janks=0;
+        lastDT=0;
+        positionArrayList.clear();
         cubeArrayList.clear();
         floatArrayListBuilder(newSize);
-        for(int i=0; i<floatArrayList.size(); i++){
-            CubeObject c1 = new CubeObject(floatArrayList.get(i), i);
+        for(int i=0; i<positionArrayList.size(); i++){
+            CubeObject c1 = new CubeObject(positionArrayList.get(i), i);
             cubeArrayList.add(i, c1);
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
-        Log.i(TAG, "OnFloorObjectCreation");
         headRotation = new float[4];
         headView = new float[16];
 
@@ -734,7 +717,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     }
 
     private void showResults(){
-        //Debug.stopMethodTracing();
         Intent intent = new Intent(this, ResultActivity.class);
         float[] resArray = new float[aFpsArray.size()];
         for(int i=0; i<resArray.length; i++){

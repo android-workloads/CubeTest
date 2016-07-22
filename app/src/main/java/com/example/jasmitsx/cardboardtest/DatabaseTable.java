@@ -27,6 +27,8 @@ public class DatabaseTable extends SQLiteOpenHelper{
     private static final String ROW_NUM = "num";
     private static final String ROW_FPS = "fps";
     private static final String ROW_CPU = "cpu";
+    private static final String ROW_JANKS = "janks";
+    private static final String ROW_APS = "aps";
 
     public DatabaseTable(Context context){
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -36,14 +38,15 @@ public class DatabaseTable extends SQLiteOpenHelper{
     @Override
     public void onCreate(SQLiteDatabase db){
         String CREATE_WORKLOAD_TABLE = "CREATE TABLE "+ PERFORMANCE_WORKLOAD +"("+
-                ROW_NUM+" INTEGER PRIMARY KEY,"+ROW_FPS +" DOUBLE,"+ROW_CPU+" DOUBLE"+")";
+                ROW_NUM+" INTEGER PRIMARY KEY,"+ROW_FPS +" DOUBLE,"+ROW_CPU+" DOUBLE,"+ROW_JANKS+
+                " INT,"+ROW_APS+" DOUBLE"+")";
         db.execSQL(CREATE_WORKLOAD_TABLE);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //Drop older table if existant
-        //db.execSQL("ALTER TABLE performance ADD stuff to add");
+        //db.execSQL("ALTER TABLE performance ADD "+ROW_APS+" DOUBLE");
         db.execSQL("DROP TABLE IF EXISTS "+PERFORMANCE_WORKLOAD);
         //recreate table
         onCreate(db);
@@ -56,6 +59,8 @@ public class DatabaseTable extends SQLiteOpenHelper{
         values.put(ROW_NUM, row.getRowNumber()); //row number
         values.put(ROW_FPS, row.getRowFPS());    //row fps
         values.put(ROW_CPU, row.getRowCPU());
+        values.put(ROW_JANKS, row.getRowJanks());
+        values.put(ROW_APS, row.getRowAPS());
 
         //insert the row into the databse
         db.insert(PERFORMANCE_WORKLOAD, null, values);
@@ -71,7 +76,8 @@ public class DatabaseTable extends SQLiteOpenHelper{
         if(cursor!=null)
             cursor.moveToFirst();
         PerformanceRow row = new PerformanceRow(Integer.parseInt(cursor.getString(0)),
-                Double.parseDouble(cursor.getString(1)), Double.parseDouble(cursor.getString(2)));
+                Double.parseDouble(cursor.getString(1)), Double.parseDouble(cursor.getString(2)),
+                Integer.parseInt(cursor.getString(3)), Double.parseDouble(cursor.getString(4)));
 
         return row;
     }
@@ -91,6 +97,8 @@ public class DatabaseTable extends SQLiteOpenHelper{
                p.setRowNumber(Integer.parseInt(cursor.getString(0)));
                p.setRowFPS(Double.parseDouble(cursor.getString(1)));
                p.setRowCPU(Double.parseDouble(cursor.getString(2)));
+               p.setRowJanks(Integer.parseInt(cursor.getString(3)));
+               p.setRowAPS(Double.parseDouble(cursor.getString(4)));
                rowList.add(p);
            }while(cursor.moveToNext());
        }

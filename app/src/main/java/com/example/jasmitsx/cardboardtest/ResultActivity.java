@@ -65,6 +65,10 @@ public class ResultActivity extends AppCompatActivity {
             editText.append(Double.toString(p.getRowFPS()));
             editText.append(" ");
             editText.append(Double.toString(p.getRowCPU()));
+            editText.append(" ");
+            editText.append(Integer.toString(p.getRowJanks()));
+            editText.append(" ");
+            editText.append(Double.toString(p.getRowAPS()));
             editText.append("\n");
         }
 
@@ -78,7 +82,7 @@ public class ResultActivity extends AppCompatActivity {
         FileChannel source = null;
         FileChannel destination = null;
         String currentDBPath = "/data/"+"com.example.jasmitsx.cardboardtest"+"/databases/"+outputTable.getDatabaseName();
-        String backupDBPath = "PERFORMANCE_WORKLOAD.csv";
+        String backupDBPath = "PERFORMANCE_WORKLOAD";
         File currentDB = new File(data, currentDBPath);
         File backupDB = new File(sd, backupDBPath);
         try{
@@ -96,7 +100,7 @@ public class ResultActivity extends AppCompatActivity {
     public void exportCsvDB(View view){
         DatabaseTable outputTable = new DatabaseTable(this);
         File sdDir = Environment.getExternalStorageDirectory();
-        String backupDBPath = "PERFORMANCE_WORKLOAD";
+        String backupDBPath = "PERFORMANCE_WORKLOAD.csv";
         File backupDB = new File(sdDir, backupDBPath);
         SQLiteDatabase out = outputTable.getReadableDatabase();
         try{
