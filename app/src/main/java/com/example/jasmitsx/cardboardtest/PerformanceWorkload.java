@@ -183,8 +183,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         stillRunning = true;
         cpuUse=0;
         cpuCount=0;
-        scheduleAddCubes(); //adds a new row of cubes every 5 seconds
         scheduleCPURead();  //reads the cpu usage every second
+        scheduleAddCubes(); //adds a new row of cubes every 5 seconds
         perfTable = new DatabaseTable(this);  //database to hold workload output information
 
         initializeGvrView();
@@ -655,7 +655,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         //Log.i(TAG, "Current CPU load: "+Double.toString(use));
         aFpsArray.add(aFps);
         perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, use, jps, aps));
-        if(aFps<10){
+        if(aFps<55){
             showResults();
         }
         updateGvrView();
