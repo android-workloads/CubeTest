@@ -24,11 +24,12 @@ public class DatabaseTable extends SQLiteOpenHelper{
     //Performance workload table name
     private static final String PERFORMANCE_WORKLOAD = "performance";
     //Workload Table Columns names
-    private static final String ROW_NUM = "num";
-    private static final String ROW_FPS = "fps";
-    private static final String ROW_CPU = "cpu";
-    private static final String ROW_JANKS = "janks";
-    private static final String ROW_APS = "aps";
+    public static final String KEY_ID = "id";
+    public static final String ROW_NUM = "num";
+    public static final String ROW_FPS = "fps";
+    public static final String ROW_CPU = "cpu";
+    public static final String ROW_JANKS = "janks";
+    public static final String ROW_APS = "aps";
 
     public DatabaseTable(Context context){
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -36,6 +37,12 @@ public class DatabaseTable extends SQLiteOpenHelper{
     }
 
     @Override
+    /*public void onCreate(SQLiteDatabase db){
+        String CREATE_WORKLOAD_TABLE = "CREATE TABLE "+ PERFORMANCE_WORKLOAD +"("+KEY_ID+" INTEGER PRIMARY KEY,"+
+                ROW_NUM+" INTEGER,"+ROW_FPS +" DOUBLE,"+ROW_CPU+" DOUBLE,"+ROW_JANKS+
+                " INT,"+ROW_APS+" DOUBLE"+")";
+        db.execSQL(CREATE_WORKLOAD_TABLE);
+    }*/
     public void onCreate(SQLiteDatabase db){
         String CREATE_WORKLOAD_TABLE = "CREATE TABLE "+ PERFORMANCE_WORKLOAD +"("+
                 ROW_NUM+" INTEGER PRIMARY KEY,"+ROW_FPS +" DOUBLE,"+ROW_CPU+" DOUBLE,"+ROW_JANKS+
@@ -104,6 +111,17 @@ public class DatabaseTable extends SQLiteOpenHelper{
        }
         return rowList;
     }
+
+    public Cursor getAllRowsCursor(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor =  db.query(PERFORMANCE_WORKLOAD, new String[]{ROW_NUM, ROW_FPS,
+        ROW_CPU, ROW_JANKS, ROW_APS}, null, null, null, null, null);
+        if(cursor != null){
+            cursor.moveToFirst();
+        }
+        return cursor;
+    }
+
     //return the database name
     public String getDatabaseName(){
         return DATABASE_NAME;

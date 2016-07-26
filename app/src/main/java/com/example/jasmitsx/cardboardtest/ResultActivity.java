@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.AdapterView;
 import android.widget.RelativeLayout;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,7 @@ import java.util.List;
 
 public class ResultActivity extends AppCompatActivity {
     private String[] resultArray;
+    private SimpleCursorAdapter dataAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +37,7 @@ public class ResultActivity extends AppCompatActivity {
         setContentView(R.layout.activity_result);
         //displayResults();
         displayDatabaseResults();
+        //displayDatabaseResultsListView();
     }
 
     private void displayResults(){
@@ -71,7 +74,45 @@ public class ResultActivity extends AppCompatActivity {
             editText.append(Double.toString(p.getRowAPS()));
             editText.append("\n");
         }
+    }
 
+    private void displayDatabaseResultsListView(){
+        DatabaseTable outputTable = new DatabaseTable(getApplicationContext());
+        List<PerformanceRow> out = outputTable.getAllRows();
+        SQLiteDatabase db = outputTable.getReadableDatabase();
+        Cursor cursor = db.query("performance", new String[]{outputTable.ROW_NUM,
+                outputTable.ROW_FPS, outputTable.ROW_CPU,
+                outputTable.ROW_JANKS, outputTable.ROW_APS}, null, null, null, null, null);
+        if(cursor != null){
+            cursor.moveToFirst();
+        }
+        String [] columns = new String[]{
+                outputTable.ROW_NUM,
+                outputTable.ROW_FPS,
+                outputTable.ROW_CPU,
+                outputTable.ROW_JANKS,
+                outputTable.ROW_APS
+        };
+
+        //XML defined views the data will be bound
+        int[] to = new int[] {
+                R.id.num,
+                R.id.fps,
+                R.id.cpu,
+                R.id.janks,
+                R.id.aps, };
+
+        //creates the adapter using the cursor pointing to the desired data
+        dataAdapter = new SimpleCursorAdapter(
+                this, R.layout.row_info,
+                cursor,
+                columns,
+                to,
+                0);
+
+        ListView listView = (ListView) findViewById(R.id.databaseOutput);
+        //assign the adapter to ListView
+        listView.setAdapter(dataAdapter);
 
     }
 

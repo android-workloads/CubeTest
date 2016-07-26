@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="6dip">
+
+    <TextView
+        android:id="@+id/row1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:text="Rows: "/>
+    <TextView
+        android:id="@+id/row2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="@+id/row1"
+        android:layout_alignParentTop="@+id/row1"
+        android:text="Average FPS: "/>
+    <TextView
+        android:id="@+id/row3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="@+id/row2"
+        android:layout_alignParentTop="@+id/row2"
+        android:text="Average CPU Load: "/>
+    <TextView
+        android:id="@+id/row4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="@+id/row3"
+        android:layout_alignParentTop="@+id/row3"
+        android:text="Average JPS: "/>
+    <TextView
+        android:id="@+id/row5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="@+id/row4"
+        android:layout_alignParentTop="@+id/row4"
+        android:text="Average APS: "/>
+    <TextView
+        android:id="@+id/num"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/row2"
+        android:layout_alignLeft="@+id/fps"
+        android:text="TextView"/>
+    <TextView
+        android:id="@+id/fps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/row3"
+        android:layout_toRightOf="@+id/row3"
+        android:text="TextView"/>
+    <TextView
+        android:id="@+id/cpu"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/row3"
+        android:layout_alignBottom="@+id/row3"
+        android:layout_toRightOf="@+id/row3"
+        android:text="TextView"/>
+    <TextView
+        android:id="@+id/janks"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/row4"
+        android:layout_alignBottom="@+id/row4"
+        android:layout_toRightOf="@+id/row4"
+        android:text="TextView"/>
+    <TextView
+        android:id="@+id/aps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/row5"
+        android:layout_alignBottom="@+id/row5"
+        android:layout_toRightOf="@+id/row5"
+        android:text="TextView"/>
+
+</RelativeLayout>

@@ -81,7 +81,7 @@
         <activity
             android:name=".ResultActivity"
             android:label="@string/result_name"
-            android:screenOrientation="portrait">
+            android:screenOrientation="landscape">
             android:parentActivityName="com.example.jasmitsx.cardboardtest.PerformanceWorkload"
         </activity>
         <activity android:name=".BatteryResult"

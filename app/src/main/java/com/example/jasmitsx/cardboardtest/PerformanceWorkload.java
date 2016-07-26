@@ -655,7 +655,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         //Log.i(TAG, "Current CPU load: "+Double.toString(use));
         aFpsArray.add(aFps);
         perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, use, jps, aps));
-        if(aFps<55){
+        if(aFps<58){
             showResults();
         }
         updateGvrView();
