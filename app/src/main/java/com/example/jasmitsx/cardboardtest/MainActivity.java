@@ -12,12 +12,12 @@ import java.lang.Object;
 
 public class MainActivity extends AppCompatActivity {
     public final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
-    private DatabaseTable perfTable;
+    private DatabaseHelper perfTable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        perfTable = new DatabaseTable(this);
+        perfTable = new DatabaseHelper(this);
         perfTable.onUpgrade(perfTable.getReadableDatabase(), perfTable.getDatabaseVersion(), perfTable.getDatabaseVersion()+1);
         setContentView(R.layout.activity_main);
     }

@@ -21,16 +21,6 @@
         android:layout_height="wrap_content"
         android:text = "@string/export_csv_button"
         android:onClick="exportCsvDB"/>
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Rows   Average FPS"/>
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:id="@+id/myEditText"/>
     <ListView
         android:id="@+id/databaseOutput"
         android:layout_width="match_parent"

@@ -36,11 +36,11 @@ public class ResultActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
         //displayResults();
-        displayDatabaseResults();
-        //displayDatabaseResultsListView();
+        //displayDatabaseResults();
+        displayDatabaseResultsListView();
     }
 
-    private void displayResults(){
+    /*private void displayResults(){
         Intent intent = getIntent();
         float[] result = intent.getFloatArrayExtra(PerformanceWorkload.EXTRA_MESSAGE);
         int resultLen = result.length;
@@ -53,13 +53,11 @@ public class ResultActivity extends AppCompatActivity {
             editText.append("\n");
         }
 
-    }
+    }*/
 
-    private void displayDatabaseResults(){
+    /*private void displayDatabaseResults(){
         Intent intent = getIntent();
-        /*float[] result = intent.getFloatArrayExtra(PerformanceWorkload.EXTRA_MESSAGE);
-        int resultLen = result.length;*/
-        DatabaseTable outputTable = new DatabaseTable(getApplicationContext());
+        DatabaseHelper outputTable = new DatabaseHelper(getApplicationContext());
         EditText editText = (EditText) findViewById(R.id.myEditText);
        List<PerformanceRow> out = outputTable.getAllRows();
         for(PerformanceRow p: out) {
@@ -74,24 +72,24 @@ public class ResultActivity extends AppCompatActivity {
             editText.append(Double.toString(p.getRowAPS()));
             editText.append("\n");
         }
-    }
+    }*/
 
     private void displayDatabaseResultsListView(){
-        DatabaseTable outputTable = new DatabaseTable(getApplicationContext());
+        DatabaseHelper outputTable = new DatabaseHelper(getApplicationContext());
         List<PerformanceRow> out = outputTable.getAllRows();
         SQLiteDatabase db = outputTable.getReadableDatabase();
-        Cursor cursor = db.query("performance", new String[]{outputTable.ROW_NUM,
-                outputTable.ROW_FPS, outputTable.ROW_CPU,
-                outputTable.ROW_JANKS, outputTable.ROW_APS}, null, null, null, null, null);
+        Cursor cursor = db.query("performance", new String[]{outputTable.getKeyId(),outputTable.getRowNumber(),
+                outputTable.getRowFps(), outputTable.getRowCpu(),
+                outputTable.getRowJanks(), outputTable.getRowAps()}, null, null, null, null, null);
         if(cursor != null){
             cursor.moveToFirst();
         }
         String [] columns = new String[]{
-                outputTable.ROW_NUM,
-                outputTable.ROW_FPS,
-                outputTable.ROW_CPU,
-                outputTable.ROW_JANKS,
-                outputTable.ROW_APS
+                outputTable.getRowNumber(),
+                outputTable.getRowFps(),
+                outputTable.getRowCpu(),
+                outputTable.getRowJanks(),
+                outputTable.getRowAps()
         };
 
         //XML defined views the data will be bound
@@ -117,7 +115,7 @@ public class ResultActivity extends AppCompatActivity {
     }
 
     public void exportDB(View view){
-        DatabaseTable outputTable = new DatabaseTable(this);
+        DatabaseHelper outputTable = new DatabaseHelper(this);
         File sd = Environment.getExternalStorageDirectory();
         File data = Environment.getDataDirectory();
         FileChannel source = null;
@@ -139,7 +137,7 @@ public class ResultActivity extends AppCompatActivity {
     }
 
     public void exportCsvDB(View view){
-        DatabaseTable outputTable = new DatabaseTable(this);
+        DatabaseHelper outputTable = new DatabaseHelper(this);
         File sdDir = Environment.getExternalStorageDirectory();
         String backupDBPath = "PERFORMANCE_WORKLOAD.csv";
         File backupDB = new File(sdDir, backupDBPath);

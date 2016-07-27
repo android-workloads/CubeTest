@@ -17,28 +17,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="@+id/row1"
-        android:layout_alignParentTop="@+id/row1"
+        android:layout_below="@+id/row1"
         android:text="Average FPS: "/>
     <TextView
         android:id="@+id/row3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="@+id/row2"
-        android:layout_alignParentTop="@+id/row2"
+        android:layout_below="@+id/row2"
         android:text="Average CPU Load: "/>
     <TextView
         android:id="@+id/row4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="@+id/row3"
-        android:layout_alignParentTop="@+id/row3"
+        android:layout_below="@+id/row3"
         android:text="Average JPS: "/>
     <TextView
         android:id="@+id/row5"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="@+id/row4"
-        android:layout_alignParentTop="@+id/row4"
+        android:layout_below="@+id/row4"
         android:text="Average APS: "/>
     <TextView
         android:id="@+id/num"

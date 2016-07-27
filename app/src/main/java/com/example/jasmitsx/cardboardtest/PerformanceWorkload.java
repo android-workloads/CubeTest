@@ -118,7 +118,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private FloatBuffer floorNormals;
     private int floorProgram;
 
-    protected DatabaseTable perfTable;
+    //protected DatabaseTable perfTable;
+    protected DatabaseHelper perfTable;
 
     //CPU use
     private float cpuUse;
@@ -183,9 +184,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         stillRunning = true;
         cpuUse=0;
         cpuCount=0;
-        scheduleCPURead();  //reads the cpu usage every second
+        //scheduleCPURead();  //reads the cpu usage every second
         scheduleAddCubes(); //adds a new row of cubes every 5 seconds
-        perfTable = new DatabaseTable(this);  //database to hold workload output information
+        perfTable = new DatabaseHelper(this);  //database to hold workload output information
 
         initializeGvrView();
         int numberOfCubes = 11; //11 cubes per row because 11 fit in the view at once
@@ -641,21 +642,18 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     }
 
     private void addNewCubeRow(){
-        double use = (cpuUse)/cpuCount;
         aps = cubeArrayList.size()*aFps;
         GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
         onRendererShutdown();
         view.shutdown();
-        //float cpuUsage = readUsage();
-        //Log.i(TAG, Float.toString(cpuUsage));
         int jps = janks/5;
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
         Log.i(TAG,"Janks per second: "+Integer.toString(jps));
         Log.i(TAG, "Animations per second:"+Double.toString(aps));
-        //Log.i(TAG, "Current CPU load: "+Double.toString(use));
+        int rows=cubeArrayList.size()/11;
         aFpsArray.add(aFps);
-        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, use, jps, aps));
-        if(aFps<58){
+        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, 1, jps, aps));
+        if(aFps<10){
             showResults();
         }
         updateGvrView();
