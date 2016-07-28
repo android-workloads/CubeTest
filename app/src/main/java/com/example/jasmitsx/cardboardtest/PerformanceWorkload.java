@@ -80,6 +80,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private ArrayList<Double> aFpsArray;
     private double totalFps=0;
 
+    private long totalTime = previousFrameTime;
+
     //other performance metrics
     private long lastDT=0;
     private int janks=0;
@@ -184,7 +186,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         stillRunning = true;
         cpuUse=0;
         cpuCount=0;
-        //scheduleCPURead();  //reads the cpu usage every second
+        scheduleCPURead();  //reads the cpu usage every second
         scheduleAddCubes(); //adds a new row of cubes every 5 seconds
         perfTable = new DatabaseHelper(this);  //database to hold workload output information
 
@@ -512,7 +514,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
             CubeObject c1 = cubeArrayList.get(n);
             Matrix.multiplyMM(modelView, 0, view, 0, c1.modelObject, 0);
             Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
-            drawObject(c1);
+            drawCubeObject(c1);
         }
 
 
@@ -565,16 +567,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      * <p>We've set all of our transformation matrices. Now we simply pass them into the shader.
      */
     private void drawObject(WorldObject object) {
-        int type = object.getType();
-
-        if(type == 1){
-            GLES20.glUseProgram(floorProgram);
-        }
-        else if(type==2) {
-            GLES20.glUseProgram(cubeProgram);
-        }
-
-        //GLES20.glUniform3fv(object.objectLightPosParam, 1, lightPosInEyeSpace, 0);
+        GLES20.glUseProgram(floorProgram);
 
         // Set the Model in the shader, used to calculate lighting
         GLES20.glUniformMatrix4fv(object.objectModelParam, 1, false, object.modelObject, 0);
@@ -582,31 +575,38 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         // Set the ModelView in the shader, used to calculate lighting
         GLES20.glUniformMatrix4fv(object.objectModelViewParam, 1, false, modelView, 0);
 
-        // Set the position of the cube
-       /* GLES20.glVertexAttribPointer(
-                object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, object.vertices);*/
-        if(type==1){
-            GLES20.glVertexAttribPointer(
-                    object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, floorVertices);
+        GLES20.glVertexAttribPointer(
+                object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, floorVertices);
+        GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, floorNormals);
+        GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, floorColors);
 
-            GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, floorNormals);
-            // GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, object.colors);
-            GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, floorColors);
-            //isLookingAtObject() ? cubeFoundColors : cubeColors);
+        // Set the ModelViewProjection matrix in the shader.
+        GLES20.glUniformMatrix4fv(object.objectModelViewProjectionParam, 1, false, modelViewProjection, 0);
 
-        }
+        // Enable vertex arrays
+        GLES20.glEnableVertexAttribArray(object.objectPositionParam);
+        GLES20.glEnableVertexAttribArray(object.objectNormalParam);
+        GLES20.glEnableVertexAttribArray(object.objectColorParam);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
+        checkGLError("Drawing floor");
+    }
 
-        if(type==2) {
-            GLES20.glVertexAttribPointer(
-                    object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, cubeVertices);
+    private void drawCubeObject(WorldObject object) {
+        GLES20.glUseProgram(cubeProgram);
 
-            // Set the normal positions of the cube, again for shading
-            //GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, object.normals);
-            GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
-            // GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, object.colors);
-            GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, cubeColors);
-            //isLookingAtObject() ? cubeFoundColors : cubeColors);
-        }
+
+        // Set the Model in the shader, used to calculate lighting
+        GLES20.glUniformMatrix4fv(object.objectModelParam, 1, false, object.modelObject, 0);
+
+        // Set the ModelView in the shader, used to calculate lighting
+        GLES20.glUniformMatrix4fv(object.objectModelViewParam, 1, false, modelView, 0);
+
+        GLES20.glVertexAttribPointer(
+                object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, cubeVertices);
+
+        // Set the normal positions of the cube, again for shading
+        GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
+        GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, cubeColors);
 
         // Set the ModelViewProjection matrix in the shader.
         GLES20.glUniformMatrix4fv(object.objectModelViewProjectionParam, 1, false, modelViewProjection, 0);
@@ -614,14 +614,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         GLES20.glEnableVertexAttribArray(object.objectPositionParam);
         GLES20.glEnableVertexAttribArray(object.objectNormalParam);
         GLES20.glEnableVertexAttribArray(object.objectColorParam);
-        if(object.getType()==1){
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 24);
-            checkGLError("Drawing floor");
-        }
-        else if(object.getType()==2) {
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
-            checkGLError("Drawing cube");
-        }
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, 36);
+        checkGLError("Drawing cube");
     }
 
     /**
@@ -646,14 +640,13 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
         onRendererShutdown();
         view.shutdown();
-        int jps = janks/5;
+        long jps = janks/((SystemClock.elapsedRealtime()-totalTime)/1000);
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
-        Log.i(TAG,"Janks per second: "+Integer.toString(jps));
+        Log.i(TAG,"Janks per second: "+Long.toString(jps));
         Log.i(TAG, "Animations per second:"+Double.toString(aps));
-        int rows=cubeArrayList.size()/11;
         aFpsArray.add(aFps);
-        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, 1, jps, aps));
-        if(aFps<10){
+        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, (cpuUse/cpuCount), (int)jps, aps));
+        if(aFps<55){
             showResults();
         }
         updateGvrView();
@@ -662,6 +655,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         int oldSize = cubeArrayList.size();
         int newSize = oldSize+11;
         aFps = 0;
+        totalTime = SystemClock.elapsedRealtime();
         frameCounter = 0;
         totalFps = 0;
         cpuUse = 0;
@@ -680,38 +674,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         headRotation = new float[4];
         headView = new float[16];
 
-    }
-
-    /**
-     * Find a new random position for the object.
-     * <p/>
-     * <p>We'll rotate it around the Y-axis so it's out of sight, and then up or down by a little bit.
-     */
-    protected void hideObject(CubeObject object) {
-        float[] rotationMatrix = new float[16];
-        float[] posVec = new float[4];
-
-        // First rotate in XZ plane, between 90 and 270 deg away, and scale so that we vary
-        // the object's distance from the user.
-        float angleXZ = (float) Math.random() * 180 + 90;
-        Matrix.setRotateM(rotationMatrix, 0, angleXZ, 0f, 1f, 0f);
-        float oldObjectDistance = objectDistance;
-        objectDistance =
-                (float) Math.random() * (MAX_MODEL_DISTANCE - MIN_MODEL_DISTANCE) + MIN_MODEL_DISTANCE;
-        float objectScalingFactor = objectDistance / oldObjectDistance;
-        float objectDistance = MAX_MODEL_DISTANCE;
-        Matrix.scaleM(rotationMatrix, 0, objectScalingFactor, objectScalingFactor, objectScalingFactor);
-        Matrix.multiplyMV(posVec, 0, rotationMatrix, 0, object.modelObject, 12);
-
-        float angleY = (float) Math.random() * 80 - 40; // Angle in Y plane, between -40 and 40.
-        angleY = (float) Math.toRadians(angleY);
-        float newY = (float) Math.tan(angleY) * objectDistance;
-
-        object.position[0] = posVec[0];
-        object.position[1] = newY;
-        object.position[2] = posVec[2];
-
-        updateModelPosition(object);
     }
 
     private void showResults(){

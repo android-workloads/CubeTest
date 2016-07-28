@@ -14,8 +14,8 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text = "@string/export_button"
-        android:onClick="exportDB"/>
+        android:text = "@string/rerun_workload_button"
+        android:onClick="rerunWorkload"/>
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -114,6 +114,13 @@ public class ResultActivity extends AppCompatActivity {
 
     }
 
+    public void rerunWorkload(View view){
+        DatabaseHelper perfTable = new DatabaseHelper(this);
+        perfTable.onUpgrade(perfTable.getReadableDatabase(), perfTable.getDatabaseVersion(), perfTable.getDatabaseVersion()+1);
+        Intent intent = new Intent(this, PerformanceWorkload.class);
+        startActivity(intent);
+    }
+
     public void exportDB(View view){
         DatabaseHelper outputTable = new DatabaseHelper(this);
         File sd = Environment.getExternalStorageDirectory();

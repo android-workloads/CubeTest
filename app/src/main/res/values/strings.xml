@@ -12,4 +12,5 @@
     <string name="batt_result_name">Battery Result Activity</string>
     <string name="export_button">Export Database as SQLite</string>
     <string name="export_csv_button">Export Database as CSV</string>
+    <string name="rerun_workload_button">Rerun Workload</string>
 </resources>
