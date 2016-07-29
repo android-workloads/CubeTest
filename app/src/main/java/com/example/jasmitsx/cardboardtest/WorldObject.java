@@ -8,7 +8,7 @@ import java.nio.FloatBuffer;
  */
 public abstract class WorldObject {
 
-    protected float[] modelObject;
+    protected final float[] modelObject;
     protected float[] modelPosition;
 
     protected float[] position;

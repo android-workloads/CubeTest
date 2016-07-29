@@ -18,7 +18,7 @@ public class DatabaseTable extends SQLiteOpenHelper{
     //database tag
     private static final String TAG = "WorkloadDatabase";
     //datatbase version
-    private static int DATABASE_VERSION  = 1;
+    private static final int DATABASE_VERSION  = 1;
     //database name
     private static final String DATABASE_NAME = "workloadInfo";
     //Performance workload table name

@@ -35,7 +35,7 @@ import javax.microedition.khronos.egl.EGLConfig;
  */
 public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoRenderer {
 
-    protected float[] tempModelPosition;
+    private float[] tempModelPosition;
 
     private CubeObject[] cubeArray;
     private ArrayList<CubeObject> cubeArrayList;
@@ -54,7 +54,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.0f;
 
-    private Handler handler = new Handler();
+    private static final Handler handler = new Handler();
 
     private static final int COORDS_PER_VERTEX = 3;
 
@@ -93,16 +93,16 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
 
     //example coordinate array
     private float[][] floatArray;
-    ArrayList<float[]> floatArrayList;
+    private ArrayList<float[]> floatArrayList;
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
-    private float floorDepth = 20f;
+    private static final float floorDepth = 20f;
     private float ceilingHeight = 40f;
 
     //shaders
-    public int vertexShader;
-    public int gridShader;
-   public int passthroughShader;
+    private int vertexShader;
+    private int gridShader;
+    private int passthroughShader;
 
     private FloatBuffer cubeVertices;
     private FloatBuffer cubeColors;
@@ -134,7 +134,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      * @param resId The resource ID of the raw text file about to be turned into a shader.
      * @return The shader object handler.
      */
-    protected int loadGLShader(int type, int resId) {
+    private int loadGLShader(int type, int resId) {
         String code = readRawTextFile(resId);
         int shader = GLES20.glCreateShader(type);
         GLES20.glShaderSource(shader, code);
@@ -163,7 +163,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      *
      * @param label Label to report in case of error.
      */
-    protected static void checkGLError(String label) {
+    private static void checkGLError(String label) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
             Log.e(TAG, label + ": glError " + error);
@@ -222,7 +222,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     /**
      * Creates an ArrayList of float objects for object position
      */
-    public void floatArrayListBuilder(int n){
+    private void floatArrayListBuilder(int n){
         float start = -20f;
         float elevation = 0.0f;
         for(int p=0; p<(n/11); p++){
@@ -237,7 +237,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     }
 
 
-    public void initializeGvrView() {
+    private void initializeGvrView() {
         setContentView(R.layout.common_ui);
 
         GvrView gvrView = (GvrView) findViewById(R.id.gvr_view);
@@ -256,7 +256,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     }
 
     //resets the gvrView but does not show the transition screen
-    public void updateGvrView(){
+    private void updateGvrView(){
         setContentView(R.layout.common_ui);
 
         GvrView gvrView = (GvrView) findViewById(R.id.gvr_view);
@@ -422,7 +422,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
     /**
      * Updates the cube model position.
      */
-    protected void updateModelPosition(WorldObject object) {
+    private void updateModelPosition(WorldObject object) {
         Matrix.setIdentityM(object.modelObject, 0);
         Matrix.translateM(object.modelObject, 0, object.getModelPosition(0),
                 object.getModelPosition(1), object.getModelPosition(2));
@@ -435,7 +435,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      * @param resId The resource ID of the raw text file about to be turned into a shader.
      * @return The context of the text file, or null in case of error.
      */
-    protected String readRawTextFile(int resId) {
+    private String readRawTextFile(int resId) {
         InputStream inputStream = getResources().openRawResource(resId);
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -486,7 +486,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         checkGLError("colorParam");
     }
 
-    protected void setCubeRotation() {
+    private void setCubeRotation() {
         //set the rotation for each cube in the ArrayList
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
@@ -575,7 +575,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
      * <p/>
      * <p>We've set all of our transformation matrices. Now we simply pass them into the shader.
      */
-    public void drawObject(WorldObject object) {
+    private void drawObject(WorldObject object) {
         int type = object.getType();
         if(type==1){
             GLES20.glUseProgram(floorProgram);
@@ -583,8 +583,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         else if(type==2){
             GLES20.glUseProgram(cubeProgram);
         }
-
-        //GLES20.glUniform3fv(object.objectLightPosParam, 1, lightPosInEyeSpace, 0);
 
         // Set the Model in the shader, used to calculate lighting
         GLES20.glUniformMatrix4fv(object.objectModelParam, 1, false, object.modelObject, 0);
@@ -605,7 +603,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
             GLES20.glVertexAttribPointer(
                     object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, cubeVertices);
             // Set the normal positions of the cube, again for shading
-            GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);;
+            GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
             GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, cubeColors);
         }
 

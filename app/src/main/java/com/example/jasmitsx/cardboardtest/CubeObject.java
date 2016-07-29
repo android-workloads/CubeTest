@@ -9,7 +9,7 @@ public class CubeObject extends WorldObject{
     //rotected float[] cubeModel;
 
     private static final String TAG = "CubeObject";
-    public int cubeID;
+    private final int cubeID;
 
     public CubeObject(float[] position, int cubeID){
         super(position);

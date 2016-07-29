@@ -52,9 +52,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private static final float YAW_LIMIT = 0.12f;
     private static final float PITCH_LIMIT = 0.0f;
 
-    private Handler h1 = new Handler();
+    private final static Handler h1 = new Handler();
 
-    private Handler h2 = new Handler();
+    private final static Handler h2 = new Handler();
 
 
     private static final int COORDS_PER_VERTEX = 3;
@@ -104,7 +104,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
 
     private float objectDistance = MAX_MODEL_DISTANCE / 2.0f;
-    private float floorDepth = 20f;;
+    private final static float floorDepth = 20f;
 
     private int vertexShader;
     private int gridShader;
@@ -121,7 +121,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private int floorProgram;
 
     //protected DatabaseTable perfTable;
-    protected DatabaseHelper perfTable;
+    private DatabaseHelper perfTable;
 
     //CPU use
     private float cpuUse;
@@ -129,7 +129,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
     private Vibrator vibrator;
 
-    public final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
+    private final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
 
     /**
      * Converts a raw text file, saved as a resource, into an OpenGL ES shader.
@@ -464,7 +464,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
             fps = 1 / ((double) frameTime / 1000);
             totalFps=totalFps+fps;
             aFps=totalFps/frameCounter;
-            if(lastDT!=0 && (frameTime-lastDT)>1.0f/120){
+            //Log.i(TAG, Double.toString(frameTime-lastDT)+"   =?   "+Float.toString((1.0f/120)*1000));
+            if(lastDT!=0 && (frameTime-lastDT)>(1.0f/120)*1000){
                 janks++;
             }
         }
@@ -646,7 +647,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Log.i(TAG, "Animations per second:"+Double.toString(aps));
         aFpsArray.add(aFps);
         perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, (cpuUse/cpuCount), (int)jps, aps));
-        if(aFps<55){
+        if(aFps<10){
             showResults();
         }
         updateGvrView();
