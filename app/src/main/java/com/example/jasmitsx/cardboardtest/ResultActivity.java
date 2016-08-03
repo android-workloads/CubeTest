@@ -28,51 +28,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ResultActivity extends AppCompatActivity {
-    private String[] resultArray;
     private SimpleCursorAdapter dataAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result);
-        //displayResults();
-        //displayDatabaseResults();
         displayDatabaseResultsListView();
     }
-
-    /*private void displayResults(){
-        Intent intent = getIntent();
-        float[] result = intent.getFloatArrayExtra(PerformanceWorkload.EXTRA_MESSAGE);
-        int resultLen = result.length;
-        EditText editText = (EditText) findViewById(R.id.myEditText);
-        for(int i=0; i<resultLen; i++){
-            String oString = Integer.toString(i+1);
-            editText.append(oString);
-            editText.append(" ");
-            editText.append(Float.toString(result[i]));
-            editText.append("\n");
-        }
-
-    }*/
-
-    /*private void displayDatabaseResults(){
-        Intent intent = getIntent();
-        DatabaseHelper outputTable = new DatabaseHelper(getApplicationContext());
-        EditText editText = (EditText) findViewById(R.id.myEditText);
-       List<PerformanceRow> out = outputTable.getAllRows();
-        for(PerformanceRow p: out) {
-            editText.append(Integer.toString(p.getRowNumber()));
-            editText.append(" ");
-            editText.append(Double.toString(p.getRowFPS()));
-            editText.append(" ");
-            editText.append(Double.toString(p.getRowCPU()));
-            editText.append(" ");
-            editText.append(Integer.toString(p.getRowJanks()));
-            editText.append(" ");
-            editText.append(Double.toString(p.getRowAPS()));
-            editText.append("\n");
-        }
-    }*/
 
     private void displayDatabaseResultsListView(){
         DatabaseHelper outputTable = new DatabaseHelper(getApplicationContext());
@@ -109,6 +72,7 @@ public class ResultActivity extends AppCompatActivity {
                 0);
 
         ListView listView = (ListView) findViewById(R.id.databaseOutput);
+        db.close();
         //assign the adapter to ListView
         listView.setAdapter(dataAdapter);
 
@@ -119,28 +83,6 @@ public class ResultActivity extends AppCompatActivity {
         perfTable.onUpgrade(perfTable.getReadableDatabase(), perfTable.getDatabaseVersion(), perfTable.getDatabaseVersion()+1);
         Intent intent = new Intent(this, PerformanceWorkload.class);
         startActivity(intent);
-    }
-
-    public void exportDB(View view){
-        DatabaseHelper outputTable = new DatabaseHelper(this);
-        File sd = Environment.getExternalStorageDirectory();
-        File data = Environment.getDataDirectory();
-        FileChannel source = null;
-        FileChannel destination = null;
-        String currentDBPath = "/data/"+"com.example.jasmitsx.cardboardtest"+"/databases/"+outputTable.getDatabaseName();
-        String backupDBPath = "PERFORMANCE_WORKLOAD";
-        File currentDB = new File(data, currentDBPath);
-        File backupDB = new File(sd, backupDBPath);
-        try{
-            source = new FileInputStream(currentDB).getChannel();
-            destination = new FileOutputStream(backupDB).getChannel();
-            destination.transferFrom(source, 0, source.size());
-            source.close();
-            destination.close();
-            Toast.makeText(this, "DB Exported!", Toast.LENGTH_LONG).show();
-        } catch(IOException e){
-            e.printStackTrace();
-        }
     }
 
     public void exportCsvDB(View view){

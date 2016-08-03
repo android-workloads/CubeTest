@@ -395,7 +395,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         object.objectModelParam = GLES20.glGetUniformLocation(cubeProgram, "u_Model");
         object.objectModelViewParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVMatrix");
         object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVP");
-        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
 
         object.objectPositionParam = GLES20.glGetAttribLocation(cubeProgram, "a_Position");
         object.objectNormalParam = GLES20.glGetAttribLocation(cubeProgram, "a_Normal");
@@ -409,7 +408,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         object.objectModelParam = GLES20.glGetUniformLocation(floorProgram, "u_Model");
         object.objectModelViewParam = GLES20.glGetUniformLocation(floorProgram, "u_MVMatrix");
         object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(floorProgram, "u_MVP");
-        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
 
         object.objectPositionParam = GLES20.glGetAttribLocation(floorProgram, "a_Position");
         object.objectNormalParam = GLES20.glGetAttribLocation(floorProgram, "a_Normal");
@@ -490,7 +488,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         //set the rotation for each cube in the ArrayList
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
-            //Matrix.setRotateM(cubeArrayList.get(n).getCubeModel(), 0, TIME_DELTA, 0.5f, 0.5f, 1.0f);
         }
 
 
@@ -602,7 +599,6 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         if(type==2) {
             GLES20.glVertexAttribPointer(
                     object.objectPositionParam, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, cubeVertices);
-            // Set the normal positions of the cube, again for shading
             GLES20.glVertexAttribPointer(object.objectNormalParam, 3, GLES20.GL_FLOAT, false, 0, cubeNormals);
             GLES20.glVertexAttribPointer(object.objectColorParam, 4, GLES20.GL_FLOAT, false, 0, cubeColors);
         }

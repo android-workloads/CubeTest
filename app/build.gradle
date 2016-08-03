@@ -19,16 +19,16 @@ android {
     }
 
 //See the documentation in libraries/native/README.md regarding architectures.
-    sourceSets {
+sourceSets {
         main {
             jniLibs.srcDir file('jniLibs/')
         }
     }
 
-/**Use this to remove the default native library.
+//Use this to remove the default native library.
     packagingOptions {
         exclude('lib/armeabi-v7a/libgvrbase.so')
-    } **/
+    }
 }
 
 dependencies {

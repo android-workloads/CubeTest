@@ -110,6 +110,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private int gridShader;
     private int passthroughShader;
 
+    private int totalFrameCounter;
+
     private FloatBuffer cubeVertices;
     private FloatBuffer cubeColors;
     private FloatBuffer cubeNormals;
@@ -120,7 +122,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private FloatBuffer floorNormals;
     private int floorProgram;
 
-    //protected DatabaseTable perfTable;
     private DatabaseHelper perfTable;
 
     //CPU use
@@ -202,6 +203,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         modelFloor = new float[16];
         tempPosition = new float[4];
         cubeArrayList = new ArrayList<>();
+        totalFrameCounter = 0;
         for (int n = 0; n < positionArrayList.size(); n++) {
             CubeObject c1 = new CubeObject(positionArrayList.get(n), n);
             cubeArrayList.add(c1);
@@ -391,7 +393,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         object.objectModelParam = GLES20.glGetUniformLocation(cubeProgram, "u_Model");
         object.objectModelViewParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVMatrix");
         object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(cubeProgram, "u_MVP");
-        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
 
         object.objectPositionParam = GLES20.glGetAttribLocation(cubeProgram, "a_Position");
         object.objectNormalParam = GLES20.glGetAttribLocation(cubeProgram, "a_Normal");
@@ -405,7 +406,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         object.objectModelParam = GLES20.glGetUniformLocation(floorProgram, "u_Model");
         object.objectModelViewParam = GLES20.glGetUniformLocation(floorProgram, "u_MVMatrix");
         object.objectModelViewProjectionParam = GLES20.glGetUniformLocation(floorProgram, "u_MVP");
-        //object.objectLightPosParam = GLES20.glGetUniformLocation(object.objectProgram, "u_LightPos");
 
         object.objectPositionParam = GLES20.glGetAttribLocation(floorProgram, "a_Position");
         object.objectNormalParam = GLES20.glGetAttribLocation(floorProgram, "a_Normal");
@@ -454,18 +454,19 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
      */
     @Override
     public void onNewFrame(HeadTransform headTransform) {
-
+        totalFrameCounter++;
         //calculations for rudimentary FPS counter
         frameTime = SystemClock.elapsedRealtime() - previousFrameTime;
         previousFrameTime = SystemClock.elapsedRealtime();
         double fps = 0;
         if(frameTime != 0) {
-            frameCounter++;
+            frameCounter++; //counts the total number of frames
             fps = 1 / ((double) frameTime / 1000);
             totalFps=totalFps+fps;
             aFps=totalFps/frameCounter;
             //Log.i(TAG, Double.toString(frameTime-lastDT)+"   =?   "+Float.toString((1.0f/120)*1000));
-            if(lastDT!=0 && (frameTime-lastDT)>(1.0f/120)*1000){
+            //A jank is if dt-lastDT > VSYNC_TIME/2
+            if(lastDT!=0 && (((frameTime-lastDT)*.001f)>(1.0f/120)||((frameTime-lastDT)*.001f)<-(1.0f/120))){
                 janks++;
             }
         }
@@ -553,9 +554,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
                 if(stillRunning){
                     cpuUse+=readUsage();
                     cpuCount++;
-                    //double currentUse = cpuUse / cpuCount;
-                   // Log.i(TAG, "Current use: "+Double.toString(cpuUse)+" Current count: "+Integer.toString(cpuCount));
-                    //Log.i(TAG, "Current usage: "+Double.toString(currentUse));
                     h2.postDelayed(this, 500);
                 }
             }
@@ -645,6 +643,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
         Log.i(TAG,"Janks per second: "+Long.toString(jps));
         Log.i(TAG, "Animations per second:"+Double.toString(aps));
+        Log.i(TAG, "Total number of frames: "+Integer.toString(totalFrameCounter));
         aFpsArray.add(aFps);
         perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, (cpuUse/cpuCount), (int)jps, aps));
         if(aFps<10){
@@ -663,6 +662,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         cpuCount = 0;
         janks=0;
         lastDT=0;
+        totalFrameCounter = 0;
         positionArrayList.clear();
         cubeArrayList.clear();
         floatArrayListBuilder(newSize);
