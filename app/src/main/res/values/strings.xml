@@ -13,4 +13,9 @@
     <string name="export_button">Export Database as SQLite</string>
     <string name="export_csv_button">Export Database as CSV</string>
     <string name="rerun_workload_button">Rerun Workload</string>
+
+    <!--Permissions-->
+    <string name="storage_permission_denied">This feature requires External Storage permission</string>
+    <string name="permission_rationale_storage">Access to External Storage is required to save the database to your device</string>
+    <string name="permission_required_toast">External Storage permission required</string>
 </resources>

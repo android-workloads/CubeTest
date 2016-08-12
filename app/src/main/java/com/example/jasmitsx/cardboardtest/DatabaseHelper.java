@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Created by jasmitsx on 7/26/2016.
  */
-public class DatabaseHelper extends SQLiteOpenHelper{
+class DatabaseHelper extends SQLiteOpenHelper{
 
     //Logcat tag
     private static final String LOG = "DatabaseHelper";

@@ -3,9 +3,9 @@ package com.example.jasmitsx.cardboardtest;
 /**
  * Created by jasmitsx on 6/29/2016.
  */
-public final class WorldLayoutData {
+final class WorldLayoutData {
 
-    public static final float[] CUBE_COORDS = new float[] {
+     static final float[] CUBE_COORDS = new float[] {
             // Front face
             -1.0f, 1.0f, 1.0f,
             -1.0f, -1.0f, 1.0f,
@@ -55,7 +55,7 @@ public final class WorldLayoutData {
             -1.0f, -1.0f, -1.0f,
     };
 
-    public static final float[] CUBE_COLORS = new float[] {
+     static final float[] CUBE_COLORS = new float[] {
             // front, green
             0f, 0.5273f, 0.2656f, 1.0f,
             0f, 0.5273f, 0.2656f, 1.0f,
@@ -105,7 +105,7 @@ public final class WorldLayoutData {
             0.8359375f,  0.17578125f,  0.125f, 1.0f,
     };
 
-    public static final float[] CUBE_FOUND_COLORS = new float[] {
+     static final float[] CUBE_FOUND_COLORS = new float[] {
             // front, yellow
             1.0f,  0.6523f, 0.0f, 1.0f,
             1.0f,  0.6523f, 0.0f, 1.0f,
@@ -155,7 +155,7 @@ public final class WorldLayoutData {
             1.0f,  0.6523f, 0.0f, 1.0f,
     };
 
-    public static final float[] CUBE_NORMALS = new float[] {
+     static final float[] CUBE_NORMALS = new float[] {
             // Front face
             0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 1.0f,
@@ -207,7 +207,7 @@ public final class WorldLayoutData {
 
     // The grid lines on the floor are rendered procedurally and large polygons cause floating point
     // precision problems on some architectures. So we split the floor into 4 quadrants.
-    public static final float[] FLOOR_COORDS = new float[] {
+     static final float[] FLOOR_COORDS = new float[] {
             // +X, +Z quadrant
             200, 0, 0,
             0, 0, 0,
@@ -241,7 +241,7 @@ public final class WorldLayoutData {
             0, 0, 0,
     };
 
-    public static final float[] FLOOR_NORMALS = new float[] {
+     static final float[] FLOOR_NORMALS = new float[] {
             0.0f, 1.0f, 0.0f,
             0.0f, 1.0f, 0.0f,
             0.0f, 1.0f, 0.0f,
@@ -268,7 +268,7 @@ public final class WorldLayoutData {
             0.0f, 1.0f, 0.0f,
     };
 
-    public static final float[] FLOOR_COLORS = new float[] {
+     static final float[] FLOOR_COLORS = new float[] {
             0.0f, 0.3398f, 0.9023f, 1.0f,
             0.0f, 0.3398f, 0.9023f, 1.0f,
             0.0f, 0.3398f, 0.9023f, 1.0f,

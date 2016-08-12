@@ -1,12 +1,10 @@
 package com.example.jasmitsx.cardboardtest;
 
-import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
-import android.os.Debug;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.os.Vibrator;
@@ -27,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
@@ -128,6 +125,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     private float cpuUse;
     private int cpuCount;
 
+    private int runType;
+
     private Vibrator vibrator;
 
     private final static String EXTRA_MESSAGE = "com.example.jasmitsx.cardboardtest.MESSAGE";
@@ -183,6 +182,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Intent intent = getIntent();
+        runType= intent.getIntExtra(MainActivity.EXTRA_MESSAGE, 1); //gets the number of cubes wanted by the
 
         stillRunning = true;
         cpuUse=0;
@@ -475,6 +477,10 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
         headTransform.getHeadView(headView, 0);
+        /*Log.i(TAG, "break: ");
+        for(int i=0; i<headView.length; i++) {
+            Log.i(TAG, "View: " + Float.toString(headView[i]));
+        }*/
         checkGLError("onReadyToDraw");
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
@@ -639,6 +645,10 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         GvrView view = (GvrView)this.findViewById(R.id.gvr_view);
         onRendererShutdown();
         view.shutdown();
+        for(int n=0; n<cubeArrayList.size(); n++){
+            Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, 0, 0.5f, 0.5f, 1.0f);
+        }
+        //Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
         long jps = janks/((SystemClock.elapsedRealtime()-totalTime)/1000);
         Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
         Log.i(TAG,"Janks per second: "+Long.toString(jps));
@@ -646,7 +656,8 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         Log.i(TAG, "Total number of frames: "+Integer.toString(totalFrameCounter));
         aFpsArray.add(aFps);
         perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, (cpuUse/cpuCount), (int)jps, aps));
-        if(aFps<10){
+        //if(cubeArrayList.size()/11>5){
+        if(aFps<55){
             showResults();
         }
         updateGvrView();
@@ -663,6 +674,9 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         janks=0;
         lastDT=0;
         totalFrameCounter = 0;
+        //GLES20.glDeleteShader(vertexShader);
+        //GLES20.glDeleteShader(gridShader);
+        //GLES20.glDeleteShader(passthroughShader);
         positionArrayList.clear();
         cubeArrayList.clear();
         floatArrayListBuilder(newSize);
@@ -672,23 +686,16 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         }
         tempModelPosition = new float[]{0.0f, -floorDepth, 0.0f}; //sets the position of the floor
         floor = new FloorObject(tempModelPosition);
-        headRotation = new float[4];
-        headView = new float[16];
 
     }
 
     private void showResults(){
         Intent intent = new Intent(this, ResultActivity.class);
-        float[] resArray = new float[aFpsArray.size()];
-        for(int i=0; i<resArray.length; i++){
-            resArray[i]=aFpsArray.get(i).floatValue();
-        }
-        intent.putExtra(EXTRA_MESSAGE, resArray);
         stillRunning = false;
         startActivity(intent);
     }
 
-    public static float[] getLightPosInEyeSpace() {
+    protected static float[] getLightPosInEyeSpace() {
         return lightPosInEyeSpace;
     }
 

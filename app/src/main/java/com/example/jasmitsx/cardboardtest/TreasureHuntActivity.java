@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
@@ -658,7 +657,7 @@ public class TreasureHuntActivity extends GvrActivity implements GvrView.StereoR
         headView = new float[16];
     }
 
-    public static float[] getLightPosInEyeSpace() {
+    protected static float[] getLightPosInEyeSpace() {
         return lightPosInEyeSpace;
     }
 }

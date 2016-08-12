@@ -3,7 +3,7 @@ package com.example.jasmitsx.cardboardtest;
 /**
  * Created by jasmitsx on 7/19/2016.
  */
-public class PerformanceRow {
+class PerformanceRow {
     private int id;
     private int rowNumber;
     private double rowFPS;

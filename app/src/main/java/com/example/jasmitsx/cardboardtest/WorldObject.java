@@ -9,7 +9,6 @@ import java.nio.FloatBuffer;
 public abstract class WorldObject {
 
     protected final float[] modelObject;
-    protected float[] modelPosition;
 
     protected float[] position;
 
@@ -40,7 +39,7 @@ public abstract class WorldObject {
 
     private static final int COORDS_PER_VERTEX = 3;
 
-    private int type;
+    //private int type;
 
 
     public WorldObject(float[] position){
@@ -54,9 +53,6 @@ public abstract class WorldObject {
 
 
     //get methods
-    /*public static float[] getCoords(){ return WorldLayoutData.CUBE_COORDS; }
-    public static float[] getColors() { return WorldLayoutData.CUBE_COLORS; }
-    public static float[] getNormals() { return WorldLayoutData.CUBE_NORMALS; }*/
     public float[] getCoords(){ return null; }
     public float[] getColors(){ return null; }
     public float[] getNormals(){ return null; }

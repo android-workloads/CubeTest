@@ -31,11 +31,11 @@ public class CubeObject extends WorldObject{
         return cubeID;
     }
 
-    public float[] getCubePosition(){
+    /*public float[] getCubePosition(){
         return modelPosition;
-    }
+    }*/
 
-    public float[] getCubeModel(){
+    float[] getCubeModel(){
         return modelObject;
     }
     //get methods
@@ -48,10 +48,6 @@ public class CubeObject extends WorldObject{
     //set methods
     public void setModelPosition(float x, float y, float z){
         super.position = new float[] {x, y, z};
-    }
-
-    public void setCubeModel(float modelCube){
-
     }
 
 

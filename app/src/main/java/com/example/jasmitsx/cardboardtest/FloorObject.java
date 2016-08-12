@@ -13,7 +13,7 @@ public class FloorObject extends WorldObject {
         }
 
         //get methods
-        public float[] getFloorModel(){ return modelObject; }
+/*        public float[] getFloorModel(){ return modelObject; }*/
         public float[] getCoords(){ return WorldLayoutData.FLOOR_COORDS; }
         public float[] getColors() { return WorldLayoutData.FLOOR_COLORS; }
         public float[] getNormals() { return WorldLayoutData.FLOOR_NORMALS; }

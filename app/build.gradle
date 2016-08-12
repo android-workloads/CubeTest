@@ -26,7 +26,7 @@ sourceSets {
     }
 
 //Use this to remove the default native library.
-    packagingOptions {
+packagingOptions {
         exclude('lib/armeabi-v7a/libgvrbase.so')
     }
 }
