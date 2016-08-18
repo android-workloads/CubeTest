@@ -98,111 +98,56 @@ public class ResultActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    public void rerunWorkload(){
-        DatabaseHelper perfTable = new DatabaseHelper(this);
-        perfTable.onUpgrade(perfTable.getReadableDatabase(), perfTable.getDatabaseVersion(), perfTable.getDatabaseVersion()+1);
-        Intent intent = new Intent(this, PerformanceWorkload.class);
-        startActivity(intent);
-    }
-
-    public void permHandler(View view){
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                ==PackageManager.PERMISSION_GRANTED){
-            exportCsvDB();
-        } else {
-            requestLocationPermission(1);
-        }
-    }
-
     public void exportCsvDB(View view){
-        DatabaseHelper outputTable = new DatabaseHelper(this);
-        File sdDir = Environment.getExternalStorageDirectory();
-        String backupDBPath = "PERFORMANCE_WORKLOAD.csv";
-        File backupDB = new File(sdDir, backupDBPath);
-        SQLiteDatabase out = outputTable.getReadableDatabase();
-        try{
-            Cursor c = out.rawQuery("select * from performance", null);
+       if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+               ==PackageManager.PERMISSION_GRANTED) {
+           DatabaseHelper outputTable = new DatabaseHelper(this);
+           File sdDir = Environment.getExternalStorageDirectory();
+           String backupDBPath = "PERFORMANCE_WORKLOAD.csv";
+           File backupDB = new File(sdDir, backupDBPath);
+           SQLiteDatabase out = outputTable.getReadableDatabase();
+           try {
+               Cursor c = out.rawQuery("select * from performance", null);
 
-            FileWriter fw = new FileWriter(backupDB);
-            BufferedWriter bw = new BufferedWriter(fw);
-            int rowCount = c.getCount();
-            int colCount = c.getColumnCount();
-            if(rowCount > 0){
-                c.moveToFirst();
-                for(int i=0; i<colCount; i++){
-                    if(i != colCount-1){
-                        bw.write(c.getColumnName(i)+",");
-                    } else{
-                        bw.write(c.getColumnName(i));
-                    }
-                }
-                bw.newLine();
-                for (int i = 0; i < rowCount; i++) {
-                    c.moveToPosition(i);
-                    for (int j = 0; j < colCount; j++) {
-                        if (j != colCount - 1)
-                        bw.write(c.getString(j) + ",");
-                        else
-                         bw.write(c.getString(j));
-                    }
-                    bw.newLine();
-                }
-                bw.flush();
-                //bw.close();
-                //fw.flush();
-                Toast.makeText(this, "DB Exported!", Toast.LENGTH_LONG).show();
-            }
+               FileWriter fw = new FileWriter(backupDB);
+               BufferedWriter bw = new BufferedWriter(fw);
+               int rowCount = c.getCount();
+               int colCount = c.getColumnCount();
+               if (rowCount > 0) {
+                   c.moveToFirst();
+                   for (int i = 0; i < colCount; i++) {
+                       if (i != colCount - 1) {
+                           bw.write(c.getColumnName(i) + ",");
+                       } else {
+                           bw.write(c.getColumnName(i));
+                       }
+                   }
+                   bw.newLine();
+                   for (int i = 0; i < rowCount; i++) {
+                       c.moveToPosition(i);
+                       for (int j = 0; j < colCount; j++) {
+                           if (j != colCount - 1)
+                               bw.write(c.getString(j) + ",");
+                           else
+                               bw.write(c.getString(j));
+                       }
+                       bw.newLine();
+                   }
+                   bw.flush();
+                   //bw.close();
+                   //fw.flush();
+                   Toast.makeText(this, "DB Exported!", Toast.LENGTH_LONG).show();
+               }
 
-        }catch(Exception ex){
-            Toast.makeText(this, "DB Export Failed", Toast.LENGTH_LONG).show();
-            ex.printStackTrace();
-        }
+           } catch (Exception ex) {
+               Toast.makeText(this, "DB Export Failed", Toast.LENGTH_LONG).show();
+               ex.printStackTrace();
+           }
+       }
+        else{
+           PermissionUtils.requestPermission(this, 1, Manifest.permission.WRITE_EXTERNAL_STORAGE, false);
+       }
 
-    }
-
-    public void exportCsvDB() {
-        DatabaseHelper outputTable = new DatabaseHelper(this);
-        File sdDir = Environment.getExternalStorageDirectory();
-        String backupDBPath = "PERFORMANCE_WORKLOAD.csv";
-        File backupDB = new File(sdDir, backupDBPath);
-        SQLiteDatabase out = outputTable.getReadableDatabase();
-        try {
-            Cursor c = out.rawQuery("select * from performance", null);
-
-            FileWriter fw = new FileWriter(backupDB);
-            BufferedWriter bw = new BufferedWriter(fw);
-            int rowCount = c.getCount();
-            int colCount = c.getColumnCount();
-            if (rowCount > 0) {
-                c.moveToFirst();
-                for (int i = 0; i < colCount; i++) {
-                    if (i != colCount - 1) {
-                        bw.write(c.getColumnName(i) + ",");
-                    } else {
-                        bw.write(c.getColumnName(i));
-                    }
-                }
-                bw.newLine();
-                for (int i = 0; i < rowCount; i++) {
-                    c.moveToPosition(i);
-                    for (int j = 0; j < colCount; j++) {
-                        if (j != colCount - 1)
-                            bw.write(c.getString(j) + ",");
-                        else
-                            bw.write(c.getString(j));
-                    }
-                    bw.newLine();
-                }
-                bw.flush();
-                //bw.close();
-                //fw.flush();
-                Toast.makeText(this, "DB Exported!", Toast.LENGTH_LONG).show();
-            }
-
-        } catch (Exception ex) {
-            Toast.makeText(this, "DB Export Failed", Toast.LENGTH_LONG).show();
-            ex.printStackTrace();
-        }
     }
 
     /**

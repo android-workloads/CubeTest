@@ -43,6 +43,12 @@ class DatabaseHelper extends SQLiteOpenHelper{
             +" INTEGER,"+ROW_FPS+" DOUBLE,"+ROW_CPU+" DOUBLE,"+ROW_JANKS
             +" INTEGER,"+ROW_APS+" DOUBLE"+")";
 
+    //Performance table create statement
+    private static final String CREATE_TABLE_PERFORMANCE2 = "CREATE TABLE "
+            +PERFORMANCE_TABLE+"("+KEY_ID+" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"+ROW_NUMBER
+            +" INTEGER,"+ROW_FPS+" DOUBLE,"+ROW_CPU+" DOUBLE,"+ROW_JANKS
+            +" DOUBLE,"+ROW_APS+" DOUBLE"+")";
+
 
     public DatabaseHelper(Context context){
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -58,6 +64,21 @@ class DatabaseHelper extends SQLiteOpenHelper{
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //drop old tables
         db.execSQL("DROP TABLE IF EXISTS "+PERFORMANCE_TABLE);
+
+        //alter the TABLE
+
+        //db.execSQL("ALTER TABLE "+PERFORMANCE_TABLE+" RENAME TO tmp");
+
+        //db.execSQL(CREATE_TABLE_PERFORMANCE2);
+
+        /*db.execSQL("ALTER TABLE "+PERFORMANCE_TABLE+" RENAME TO tmp;"+
+                CREATE_TABLE_PERFORMANCE2+";"+
+                "INSERT INTO "+PERFORMANCE_TABLE+"("+KEY_ID+", "+ROW_NUMBER+", "+ROW_FPS+", "
+                +ROW_CPU+", "+ROW_JANKS+", "+ROW_APS+") " +
+                "SELECT "+KEY_ID+", "+ROW_NUMBER+", "+ROW_FPS+", "
+                +ROW_CPU+", "+ROW_JANKS+", "+ROW_APS+" " +
+                "FROM tmp;" +
+                "DROP TABLE tmp;");*/
 
         //create new tables
         onCreate(db);
@@ -90,6 +111,7 @@ class DatabaseHelper extends SQLiteOpenHelper{
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor c = db.rawQuery(selectQuery, null);
+
 
         //loop through all rows and add to list
         if(c.moveToFirst()){

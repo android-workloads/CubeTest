@@ -11,8 +11,8 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="22"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="22"/>
+    <!--<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="22"/>-->
 
     <!-- Make accelerometer and gyroscope hard requirements for good head tracking. -->
     <uses-feature

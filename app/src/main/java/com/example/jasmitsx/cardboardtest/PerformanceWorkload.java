@@ -466,7 +466,7 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
             fps = 1 / ((double) frameTime / 1000);
             totalFps=totalFps+fps;
             aFps=totalFps/frameCounter;
-            //Log.i(TAG, Double.toString(frameTime-lastDT)+"   =?   "+Float.toString((1.0f/120)*1000));
+
             //A jank is if dt-lastDT > VSYNC_TIME/2
             if(lastDT!=0 && (((frameTime-lastDT)*.001f)>(1.0f/120)||((frameTime-lastDT)*.001f)<-(1.0f/120))){
                 janks++;
@@ -477,10 +477,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
 
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
         headTransform.getHeadView(headView, 0);
-        /*Log.i(TAG, "break: ");
-        for(int i=0; i<headView.length; i++) {
-            Log.i(TAG, "View: " + Float.toString(headView[i]));
-        }*/
         checkGLError("onReadyToDraw");
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
@@ -648,16 +644,11 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         for(int n=0; n<cubeArrayList.size(); n++){
             Matrix.rotateM(cubeArrayList.get(n).getCubeModel(), 0, 0, 0.5f, 0.5f, 1.0f);
         }
-        //Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-        long jps = janks/((SystemClock.elapsedRealtime()-totalTime)/1000);
-        Log.i(TAG, "Average FPS: "+ Double.toString(aFps));
-        Log.i(TAG,"Janks per second: "+Long.toString(jps));
-        Log.i(TAG, "Animations per second:"+Double.toString(aps));
-        Log.i(TAG, "Total number of frames: "+Integer.toString(totalFrameCounter));
+
+        double jps = ((double)janks/((SystemClock.elapsedRealtime()-totalTime)/1000));
         aFpsArray.add(aFps);
-        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, (cpuUse/cpuCount), (int)jps, aps));
-        //if(cubeArrayList.size()/11>5){
-        if(aFps<55){
+        perfTable.addRow(new PerformanceRow(cubeArrayList.size()/11, aFps, (cpuUse/cpuCount), jps, aps));
+        if(aFps<10){
             showResults();
         }
         updateGvrView();
@@ -674,9 +665,6 @@ public class PerformanceWorkload extends GvrActivity implements GvrView.StereoRe
         janks=0;
         lastDT=0;
         totalFrameCounter = 0;
-        //GLES20.glDeleteShader(vertexShader);
-        //GLES20.glDeleteShader(gridShader);
-        //GLES20.glDeleteShader(passthroughShader);
         positionArrayList.clear();
         cubeArrayList.clear();
         floatArrayListBuilder(newSize);
