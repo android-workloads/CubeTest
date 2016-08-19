@@ -1,4 +1,4 @@
-**Google Cardboard Benchmarks**
+**Google Cardboard Workload**
 
 Google Cardboard and Google VR presents a new challenge to the User-Experience of Android devices. To render binocular video, the system must draw twice as many objects for any given scene. Furthermore, given the nature of VR technology, the impact of low frame rates and inconsistencies in frame rate(Jank) on the user experience is much larger than it is in other applications.
 
