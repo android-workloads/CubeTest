@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CardboardTest</string>
+    <string name="app_name">CubeTest</string>
     <string name="start_workload">Start Battery Workload(Runs for 10 Minutes)</string>
     <string name="number_input_info">Enter the number of rows</string>
     <string name="time_input_info">Enter the number of minutes to run the test</string>

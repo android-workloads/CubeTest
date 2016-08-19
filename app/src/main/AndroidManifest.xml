@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.jasmitsx.cardboardtest">
+    package="com.example.jasmitsx.cubetest">
 
     <uses-sdk
         android:minSdkVersion="19"
@@ -45,7 +45,7 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name="com.example.jasmitsx.cubetest.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -53,17 +53,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".DisplayMessageActivity"
+            android:name="com.example.jasmitsx.cubetest.DisplayMessageActivity"
             android:label="@string/title_activity_display_message"
-            android:parentActivityName=".MainActivity">
+            android:parentActivityName="com.example.jasmitsx.cubetest.MainActivity">
 
             <!-- android:theme="@style/AppTheme.NoActionBar"> -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.example.jasmitsx.cardboardtest.MainActivity" />
+                android:value="com.example.jasmitsx.cubetest.MainActivity" />
         </activity>
         <activity
-            android:name=".TreasureHuntActivity"
+            android:name="com.example.jasmitsx.cubetest.BatteryWorkload"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/treasure_name"
             android:screenOrientation="landscape">
@@ -73,7 +73,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PerformanceWorkload"
+            android:name="com.example.jasmitsx.cubetest.PerformanceWorkload"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/performance_name"
             android:screenOrientation="landscape">
@@ -83,15 +83,15 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ResultActivity"
+            android:name="com.example.jasmitsx.cubetest.ResultActivity"
             android:label="@string/result_name"
             android:screenOrientation="portrait">
-            android:parentActivityName="com.example.jasmitsx.cardboardtest.PerformanceWorkload"
+            android:parentActivityName="com.example.jasmitsx.cubetest.PerformanceWorkload"
         </activity>
-        <activity android:name=".BatteryResult"
+        <activity android:name="com.example.jasmitsx.cubetest.BatteryResult"
             android:label="@string/batt_result_name"
             android:screenOrientation="portrait">
-            android:parentActivityName="com.example.jasmitsx.cardboardtest.TreasureHuntActivity"
+            android:parentActivityName="com.example.jasmitsx.cubetest.TreasureHuntActivity"
         </activity>
     </application>
 
