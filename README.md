@@ -12,10 +12,6 @@ The workload relies on the OpenGL ES framework for 3D graphics and rendering of 
 
 The primary limiting factor seems to be the number of animations/second that the device can handle.
 
-**How my workload differs from the original:**
-
-(differing code blocks, showing one cube allocated, showing new code allocating a bunch, text saying how I had to generalize the cube definition, maybe including filename)
-
 **How to run CubeTest**
 
 The CubeTest Performance Workload will start the application with one row of 11 cubes and will add a row of cubes every 5 seconds until the process hits a minimum average (over the 5 seconds) below 10 frames per second. Once the workload is complete, it will display the results. From the result screen, the user can either rerun the workload or download the results as a CSV file. The CSV file can be opened from the device in Google Sheets or downloaded to a PC for further analysis.
