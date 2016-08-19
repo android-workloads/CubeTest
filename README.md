@@ -26,13 +26,6 @@ The CubeTest Battery Workload will start the application with a user-selected nu
 
 CubeTest is a heavy single-core workload. Only one thread is kept hot throughout the workload. The workload also shows very heavy utilization of the ART(Android Runtime). This is because OpenGL ES is making many JNI data copies under the surface. Specifically, in a VR workload, some data copy operations will be performed twice as often because some data is unique for each eye. Also, screen resolution does have an effect on devices&#39; performance on the workload. We noticed that scaling down certain device&#39;s resolution would cause them to perform better on the workload.
 
-**Screenshots:**
-
-View of the workload in action:
-
-
-
-View of the results screen with explinations:
 
 **Links:**
 
