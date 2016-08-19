@@ -450,6 +450,7 @@ public class BatteryWorkload extends GvrActivity implements GvrView.StereoRender
     public void onNewFrame(HeadTransform headTransform) {
         setCubeRotation();
 
+
         // Build the camera matrix and apply it to the ModelView.
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
         headTransform.getHeadView(headView, 0);
